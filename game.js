@@ -11,7 +11,7 @@
     bets: { main: 50, tie: 0 },
     chipCounts: { main: { 50: 1 }, tie: {} },
     selectedChip: 50,
-    deckCount: 1,
+    deckCount: 6,
     tally: {
       "main_2x": 0, "main_0x": 0, "main_tie": 0,
       "main_2.5x": 0, "main_3.5x": 0, "main_5x": 0, "main_100x": 0,
@@ -25,6 +25,8 @@
   const $ = (selector) => document.querySelector(selector);
   const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
   const cardBack = "cards/card_back.png";
+  let shoe = [];
+  let cutCardRemaining = 0;
 
   function format(value) {
     return Math.floor(value).toLocaleString("en-US");
@@ -94,7 +96,7 @@
     }
 
     const total = totalBet();
-    $("#deck-caption").textContent = `${state.deckCount} ${state.deckCount === 1 ? "DECK WAR" : "DECK WAR"} · ${format(state.deckCount * 52)} CARDS`;
+    $("#deck-caption").textContent = "6 DECK WAR · 312 CARDS";
     $("#total-bet").textContent = format(total);
     $("#table-wager").textContent = format(total);
     const dealDisabled = state.busy || state.chips < 50 || state.bets.main < 50 || total > state.chips;
@@ -190,6 +192,20 @@
     animation.replaceChildren();
   }
 
+  async function placeCutCard(deck) {
+    const penetration = 0.5 + Math.random() * 0.1;
+    cutCardRemaining = deck.length - Math.floor(deck.length * penetration);
+    const animation = $("#shuffle-animation");
+    const marker = document.createElement("div");
+    marker.className = "shoe-cut-marker";
+    animation.replaceChildren(marker);
+    animation.hidden = false;
+    setMessage("Cut card", "The purple card marks when to reshuffle.", "SIX-DECK SHOE");
+    await delay(1500);
+    animation.hidden = true;
+    animation.replaceChildren();
+  }
+
   async function prepareDeck(deck, cardsNeeded) {
     if (!$("#cut-burn-toggle").checked) { $(".dealer-deck").hidden = false; return; }
     setMessage("Cut or burn?", "Cut the deck or discard the top card.", "DEALER ASKS");
@@ -253,10 +269,16 @@
 
     renderCards("#player-cards", []);
     renderCards("#house-cards", []);
-    setMessage("Shuffling", "A fresh deck for this hand.", "GET READY");
-    const deck = makeDeck();
-    await showShuffle();
-    await prepareDeck(deck, 2);
+    if (shoe.length <= cutCardRemaining || shoe.length < 8) {
+      setMessage("Shuffling", "Preparing a fresh six-deck shoe.", "GET READY");
+      shoe = makeDeck();
+      await showShuffle();
+      await prepareDeck(shoe, 8);
+      $(".dealer-deck").hidden = true;
+      await placeCutCard(shoe);
+      $(".dealer-deck").hidden = false;
+    }
+    const deck = shoe;
     const player = draw(deck)[0];
     const house = draw(deck)[0];
     renderCards("#player-cards", [null], null, null, true);
@@ -277,7 +299,7 @@
     const comparison = value(player) - value(house);
     const tieWin = comparison === 0 && state.bets.tie > 0;
     if (tieWin) {
-      const sidePayout = state.bets.tie * 3;
+      const sidePayout = state.bets.tie * 11;
       returns.tie += sidePayout;
       payout += sidePayout;
       addPayout(sidePayout);

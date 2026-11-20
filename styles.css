@@ -637,3 +637,5 @@ footer { flex: 0 0 auto; padding-top: 6px; color: #647168; font-size: 9px; text-
 }
 .table-caption { z-index: 0; }
 .house-side, .player-side { z-index: 2; }
+.shoe-cut-marker { position: absolute; top: 50%; left: 50%; width: 90px; height: 126px; border: 2px solid #bd9be4; border-radius: 7px; background: linear-gradient(145deg, #a262df, #49216f); box-shadow: 0 0 22px #a262df88; animation: insert-shoe-card 1.5s ease-in-out both; }
+@keyframes insert-shoe-card { 0% { opacity: 0; transform: translate(90px, -50%) rotate(12deg); } 25% { opacity: 1; } 75% { opacity: 1; transform: translate(-50%, -50%) rotate(0); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(.96); } }
