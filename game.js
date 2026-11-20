@@ -8,14 +8,14 @@
   const denominations = [500, 100, 50, 25, 5, 1];
   const state = {
     chips: startingChips,
-    bets: { main: 50, tie: 0, suited: 0 },
-    chipCounts: { main: { 50: 1 }, tie: {}, suited: {} },
+    bets: { main: 50, tie: 0 },
+    chipCounts: { main: { 50: 1 }, tie: {} },
     selectedChip: 50,
     deckCount: 1,
     tally: {
       "main_2x": 0, "main_0x": 0, "main_tie": 0,
       "main_2.5x": 0, "main_3.5x": 0, "main_5x": 0, "main_100x": 0,
-      side_tie: 0, side_suited: 0, "side_suited+win": 0, wars_lost: 0
+      side_tie: 0, wars_lost: 0
     },
     handsPlayed: 0,
     busy: false,
@@ -31,7 +31,7 @@
   }
 
   function totalBet() {
-    return state.bets.main + state.bets.tie + state.bets.suited;
+    return state.bets.main + state.bets.tie;
   }
 
   function chipsForAmount(amount) {
@@ -87,14 +87,13 @@
     $("#profit").textContent = `${profit >= 0 ? "+" : "−"}${format(Math.abs(profit))}`;
     $("#profit").style.color = profit >= 0 ? "#8bd19f" : "#f08a82";
 
-    for (const [key, id] of [["main", "main-bet"], ["tie", "tie-bet"], ["suited", "suited-bet"]]) {
+    for (const [key, id] of [["main", "main-bet"], ["tie", "tie-bet"]]) {
       $(`#${id}`).textContent = format(state.bets[key]);
       document.querySelector(`[data-side-value="${key}"]`).textContent = format(state.bets[key]);
       showBetStack(key);
     }
 
     const total = totalBet();
-    $("#deck-count").disabled = state.busy || state.auto;
     $("#deck-caption").textContent = `${state.deckCount} ${state.deckCount === 1 ? "DECK WAR" : "DECK WAR"} · ${format(state.deckCount * 52)} CARDS`;
     $("#total-bet").textContent = format(total);
     $("#table-wager").textContent = format(total);
@@ -103,8 +102,8 @@
     $("#auto-button").disabled = state.chips < 50 && !state.auto;
     $("#auto-button").classList.toggle("is-active", state.auto);
     $("#auto-button").textContent = state.auto ? "■  STOP AUTO" : "▶  AUTO PLAY";
-    $("#clear-bets").disabled = state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0 && state.bets.suited === 0);
-    $("#halve-bets").disabled = state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0 && state.bets.suited === 0);
+    $("#clear-bets").disabled = state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0);
+    $("#halve-bets").disabled = state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0);
     $("#double-bets").disabled = state.busy || state.auto || total * 2 > state.chips;
 
     document.querySelectorAll("[data-chip]").forEach((button) => {
@@ -246,7 +245,7 @@
     const chipsBeforeHand = state.chips;
     $("#hand-summary").textContent = "Hand in progress";
     $("#table-results").hidden = true;
-    for (const key of ["main", "tie", "suited"]) $(`#${key}-return`).hidden = true;
+    for (const key of ["main", "tie"]) $(`#${key}-return`).hidden = true;
     state.busy = true;
     state.handsPlayed += 1;
     state.chips -= total;
@@ -274,23 +273,15 @@
     await delay(900);
 
     let payout = 0;
-    const returns = { main: 0, tie: 0, suited: 0 };
+    const returns = { main: 0, tie: 0 };
     const comparison = value(player) - value(house);
     const tieWin = comparison === 0 && state.bets.tie > 0;
-    const suitedWin = player.suit === house.suit && state.bets.suited > 0;
     if (tieWin) {
       const sidePayout = state.bets.tie * 3;
       returns.tie += sidePayout;
       payout += sidePayout;
       addPayout(sidePayout);
       state.tally.side_tie += 1;
-    }
-    if (suitedWin) {
-      const sidePayout = state.bets.suited * 3;
-      returns.suited += sidePayout;
-      payout += sidePayout;
-      addPayout(sidePayout);
-      state.tally.side_suited += 1;
     }
 
     if (comparison > 0) {
@@ -299,7 +290,6 @@
       payout += mainPayout;
       addPayout(mainPayout);
       state.tally["main_2x"] += 1;
-      if (suitedWin) state.tally["side_suited+win"] += 1;
       renderCards("#player-cards", [player], "is-winner");
       renderCards("#house-cards", [house], "is-loser");
       setMessage("You win!", `${player.rank} beats ${house.rank} · paid ${format(payout)} chips`);
@@ -314,8 +304,8 @@
       renderCards("#house-cards", [house], "is-tie");
       setMessage("It’s a tie!", "The main bet goes to War.", "TIME FOR WAR");
       await delay(500);
-      if (state.deckCount === 1) await announceWar();
-      const warPayout = state.deckCount === 300 ? await playSuperWar(deck, player) : await playWar(deck);
+      await announceWar();
+      const warPayout = await playWar(deck);
       returns.main += warPayout;
       payout += warPayout;
     }
@@ -325,7 +315,7 @@
     $("#hand-summary").textContent = `Wagered ${format(wagered)} · Returned ${format(payout)} · ${net >= 0 ? "+" : "−"}${format(Math.abs(net))}`;
     $("#result-title").textContent = net > 0 ? "WIN" : net < 0 ? "LOSS" : "EVEN";
     const breakdown = $("#result-breakdown");
-    breakdown.replaceChildren(...[["main", "Main"], ["tie", "Tie"], ["suited", "Suited"]].map(([key, label]) => {
+    breakdown.replaceChildren(...[["main", "Main"], ["tie", "Tie"]].map(([key, label]) => {
       const line = document.createElement("span");
       line.textContent = `${label}: ${format(returns[key])}`;
       const chip = $(`#${key}-return`);
@@ -344,111 +334,6 @@
       update();
     }
     return payout;
-  }
-
-  function chooseWarAction(settlement, canDouble, initial = false) {
-    if (state.auto) return Promise.resolve("continue");
-    const choices = $("#war-choices");
-    const settle = choices.querySelector('[data-choice="settle"]');
-    const proceed = choices.querySelector('[data-choice="continue"]');
-    const double = choices.querySelector('[data-choice="double"]');
-    settle.hidden = settlement === null;
-    if (settlement !== null) settle.textContent = `${initial ? "SURRENDER" : "SETTLE"} · ${format(settlement)}`;
-    proceed.textContent = initial ? `GO TO WAR · ${format(state.bets.main)}` : "CONTINUE";
-    proceed.disabled = initial && state.chips < state.bets.main;
-    double.hidden = initial;
-    double.disabled = !canDouble;
-    choices.hidden = false;
-    return new Promise((resolve) => {
-      function onChoice(event) {
-        const button = event.target.closest("[data-choice]");
-        if (!button || button.disabled) return;
-        choices.removeEventListener("click", onChoice);
-        choices.hidden = true;
-        resolve(button.dataset.choice);
-      }
-      choices.addEventListener("click", onChoice);
-    });
-  }
-
-  async function playSuperWar(deck, initialCard) {
-    const initialSettlement = Math.floor(state.bets.main / 2);
-    setMessage("Draw!", `Surrender for ${format(initialSettlement)} or match your bet to go to War.`, "CHOOSE");
-    const initialAction = state.auto && state.chips < state.bets.main ? "settle" : await chooseWarAction(initialSettlement, false, true);
-    if (initialAction === "settle") {
-      addPayout(initialSettlement);
-      setMessage("Surrendered", `Returned ${format(initialSettlement)} chips.`, "HAND OVER");
-      return initialSettlement;
-    }
-
-    await announceWar();
-    state.chips -= state.bets.main;
-    let wager = state.bets.main * 2;
-    let aceTies = initialCard.rank === "A" ? 1 : 0;
-    update();
-
-    while (deck.length >= 8) {
-
-      const playerCards = draw(deck, 4);
-      const houseCards = draw(deck, 4);
-      const shownPlayer = [null, null, null, null];
-      const shownHouse = [null, null, null, null];
-      for (let dealt = 1; dealt <= shownPlayer.length; dealt += 1) {
-        renderCards("#player-cards", shownPlayer.slice(0, dealt), null, null, true);
-        await delay(350);
-        renderCards("#house-cards", shownHouse.slice(0, dealt), null, null, true);
-        await delay(350);
-      }
-      setMessage("Cards are dealt", "Four cards face down.", "WAR");
-      await delay(1100);
-
-      for (let round = 1; round <= 4; round += 1) {
-        const index = 4 - round;
-        shownHouse[index] = houseCards[index];
-        renderCards("#house-cards", shownHouse);
-        await delay(700);
-        shownPlayer[index] = playerCards[index];
-        renderCards("#player-cards", shownPlayer);
-        setMessage(`War round ${round}`, `Wager: ${format(wager)} chips`, "WAR");
-        await delay(1000);
-        const comparison = value(playerCards[index]) - value(houseCards[index]);
-        if (comparison !== 0) {
-          const won = comparison > 0;
-          renderCards("#player-cards", shownPlayer, won ? "is-winner" : "is-loser", index);
-          renderCards("#house-cards", shownHouse, won ? "is-loser" : "is-winner", index);
-          if (!won) {
-            state.tally.wars_lost += 1;
-            state.tally["main_0x"] += 1;
-            setMessage("House wins the War", "War wager lost.", "HAND OVER");
-            return 0;
-          }
-          const jackpot = round === 4 && aceTies === 4 && playerCards[index].rank === "A";
-          const payout = Math.floor(jackpot ? state.bets.main * 10000 : wager * 2.5);
-          addPayout(payout);
-          setMessage(jackpot ? "Ace jackpot!" : "You win the War!", `Paid ${format(payout)} chips.`, jackpot ? "JACKPOT" : "HAND OVER");
-          return payout;
-        }
-
-        aceTies = aceTies > 0 && playerCards[index].rank === "A" ? aceTies + 1 : 0;
-        const settlement = round < 4 ? Math.floor(wager * [0, 0.75, 1, 1.25][round]) : null;
-        setMessage("War draw", settlement === null ? "All or nothing. Deal the next War." : `Settle for ${format(settlement)} or play on.`, "CHOOSE");
-        const action = await chooseWarAction(settlement, state.chips >= wager);
-        if (action === "settle") {
-          addPayout(settlement);
-          setMessage("Settled", `Returned ${format(settlement)} chips.`, "HAND OVER");
-          return settlement;
-        }
-        if (action === "double") {
-          state.chips -= wager;
-          wager *= 2;
-          update();
-        }
-      }
-    }
-    state.tally.wars_lost += 1;
-    state.tally["main_0x"] += 1;
-    setMessage("Deck exhausted", "The War wager is lost.", "HAND OVER");
-    return 0;
   }
 
   async function playWar(deck) {
@@ -516,15 +401,14 @@
   }
 
   $("#clear-bets").addEventListener("click", () => {
-    state.bets = { main: 50, tie: 0, suited: 0 };
-    state.chipCounts = { main: { 50: 1 }, tie: {}, suited: {} };
+    state.bets = { main: 50, tie: 0 };
+    state.chipCounts = { main: { 50: 1 }, tie: {} };
     update();
   });
 
   $("#halve-bets").addEventListener("click", () => {
     state.bets.main = Math.max(50, Math.floor(state.bets.main / 2));
     state.bets.tie = Math.floor(state.bets.tie / 2);
-    state.bets.suited = Math.floor(state.bets.suited / 2);
     for (const key of Object.keys(state.bets)) state.chipCounts[key] = chipsForAmount(state.bets[key]);
     update();
   });
@@ -538,10 +422,6 @@
     update();
   });
 
-  $("#deck-count").addEventListener("change", (event) => {
-    state.deckCount = Number(event.target.value);
-    update();
-  });
 
   document.querySelectorAll("[data-chip]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -599,6 +479,7 @@
   renderCards("#house-cards", []);
   update();
 })();
+
 
 
 
