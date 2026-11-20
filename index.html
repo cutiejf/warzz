@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#181916">
+    <meta name="description" content="Play Stake War, a card game of War with optional side bets.">
+    <title>Stake War</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="game.js" defer></script>
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Stake War home">
+          <span class="brand-mark" aria-hidden="true">♠</span>
+          <span>STAKE <strong>WAR</strong></span>
+        </a>
+      </header>
+
+      <div class="game-layout">
+      <section class="play-panel" aria-label="Place bets">
+        <button type="button" class="auto-button" id="auto-button">▶ &nbsp; AUTO PLAY</button>
+        <strong class="summary-label">PLACE BETS</strong>
+        <div class="chip-tray side-chip-tray" role="group" aria-label="Select chip value">
+          <span class="tray-label">CHIPS</span>
+          <button type="button" class="chip chip-5" data-chip="5" aria-pressed="false" aria-label="Select 5 chip">5</button>
+          <button type="button" class="chip chip-25" data-chip="25" aria-pressed="false" aria-label="Select 25 chip">25</button>
+          <button type="button" class="chip chip-50" data-chip="50" aria-pressed="true" aria-label="Select 50 chip">50</button>
+          <button type="button" class="chip chip-100" data-chip="100" aria-pressed="false" aria-label="Select 100 chip">100</button>
+          <button type="button" class="chip chip-500" data-chip="500" aria-pressed="false" aria-label="Select 500 chip">500</button>
+        </div>
+        <div class="side-bets">
+          <button type="button" data-bet="main">Main bet <strong data-side-value="main">50</strong></button>
+          <button type="button" data-bet="tie">Tie bet <strong data-side-value="tie">0</strong></button>
+          <button type="button" data-bet="suited">Suited bet <strong data-side-value="suited">0</strong></button>
+        </div>
+        <div class="play-controls">
+          <label class="deck-select">MODE <select id="deck-count" aria-label="Game mode"><option value="1">Classic War · 1 deck</option><option value="300">Super War · 300 decks</option></select></label>
+          <div class="bet-actions" role="group" aria-label="Adjust all bets">
+            <button type="button" id="clear-bets">Clear bets</button>
+            <button type="button" id="halve-bets">½×</button>
+            <button type="button" id="double-bets">2×</button>
+          </div>
+          <button type="button" class="deal-button" id="deal-button">DEAL HAND <span aria-hidden="true">→</span></button>
+          
+          
+        </div>
+      </section>
+      <section class="table" aria-label="Stake War table">
+        <div class="war-banner" id="war-banner" aria-hidden="true" hidden>WAR</div>
+        <div class="table-center">
+          <div class="shuffle-animation" id="shuffle-animation" aria-hidden="true" hidden></div>
+          <section class="side house-side" aria-label="House cards">
+            <div class="side-heading"><span class="dot house-dot"></span>HOUSE</div>
+            <div class="cards" id="house-cards"></div>
+          </section>
+          <div class="table-message" id="message" role="status" aria-live="polite">
+            <span class="message-kicker">WELCOME TO THE TABLE</span>
+            <strong>Place your bets</strong>
+            <span>Beat the house. If you tie, it’s time for War.</span>
+          </div>
+          <div class="war-choices" id="war-choices" hidden>
+            <button type="button" data-choice="settle">SURRENDER</button>
+            <button type="button" data-choice="continue">GO TO WAR</button>
+            <button type="button" data-choice="double">DOUBLE DOWN</button>
+          </div>
+          <img class="choice-deck" src="cards/card_back.png" alt="" aria-hidden="true">
+          <div class="war-choices" id="deck-choices" role="group" aria-label="Cut or burn the deck" hidden>
+            <button type="button" data-deck-choice="cut">CUT DECK</button>
+            <button type="button" data-deck-choice="burn">BURN TOP CARD</button>
+          </div>
+          <section class="side player-side" aria-label="Your cards">
+            <div class="cards" id="player-cards"></div>
+            <div class="side-heading"><span class="dot player-dot"></span>YOU</div>
+          </section>
+          <div class="bet-controls" aria-label="Betting spots">
+            <div class="bet-spot main-spot"><button type="button" class="place-bet" data-bet="main"><strong>ANTE</strong><span class="bet-value"><output id="main-bet">50</output></span></button><span class="payout-chip" id="main-return" hidden></span><button type="button" class="clear-bet" data-clear="main" aria-label="Reset main bet" title="Reset main bet">↺</button></div>
+            <div class="bet-spot tie-spot"><button type="button" class="place-bet" data-bet="tie"><strong>TIE</strong><small>2×</small><span class="bet-value" data-denomination="0"><output id="tie-bet">0</output></span></button><span class="payout-chip" id="tie-return" hidden></span><button type="button" class="clear-bet" data-clear="tie" aria-label="Clear tie bet" title="Clear tie bet">↺</button></div>
+            <div class="bet-spot suited-spot"><button type="button" class="place-bet" data-bet="suited"><strong>SUIT</strong><small>3×</small><span class="bet-value" data-denomination="0"><output id="suited-bet">0</output></span></button><span class="payout-chip" id="suited-return" hidden></span><button type="button" class="clear-bet" data-clear="suited" aria-label="Clear suited bet" title="Clear suited bet">↺</button></div>
+          </div>
+          <div class="dealer-station" aria-hidden="true"><div class="dealer-deck"><img src="cards/card_back.png" alt=""></div><div class="dealer-tray"><span class="dealer-stack"><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span><span class="chip chip-5">5</span></span><span class="dealer-stack"><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span><span class="chip chip-25">25</span></span><span class="dealer-stack"><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span><span class="chip chip-50">50</span></span><span class="dealer-stack"><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span><span class="chip chip-100">100</span></span><span class="dealer-stack"><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span><span class="chip chip-500">500</span></span></div></div><div id="hand-summary" hidden></div>
+          <div class="table-results" id="table-results" aria-live="polite" hidden>
+            <strong id="result-title"></strong>
+            <div id="result-breakdown"></div>
+            <span id="result-total"></span>
+          </div>
+          <div class="table-caption" aria-label="Table details"><svg viewBox="0 0 500 260" aria-hidden="true"><defs><path id="halo-top" d="M 15,112 A 235,120 0 0,1 485,112"/><path id="halo-bottom" d="M 15,148 A 235,120 0 0,0 485,148"/></defs><text><textPath id="deck-caption" href="#halo-top" startOffset="50%" text-anchor="middle">1 DECK WAR · 52 CARDS</textPath></text><text><textPath href="#halo-bottom" startOffset="50%" text-anchor="middle">SURRENDER PAYS 1:2</textPath></text></svg></div>
+          <label class="cut-burn-toggle"><input type="checkbox" id="cut-burn-toggle" checked> <span>Cut / burn</span></label>
+          <div class="table-actions"><div class="table-wager"><span>TOTAL WAGER</span><strong id="table-wager">50</strong></div><button type="button" class="deal-button table-deal-button" id="deal-button-secondary">DEAL HAND <span aria-hidden="true">→</span></button></div>
+        </div>
+      </section>
+
+      <section class="control-panel" aria-label="Game controls">
+
+        <details class="rules-panel" open>
+          <summary>Rules</summary>
+          <p>Higher card wins. A main bet win pays 2× total; a tie starts War.</p>
+          <p><strong>Classic:</strong> Reveal up to three War cards. A win pays 2.5×, 3.5× or 5×; three ties pay 100×.</p>
+          <p><strong>Super:</strong> Surrender half your main bet or match it to enter War. Reveal four cards in reverse order; after a tie, settle, continue or double down. A War win pays 2.5× the War wager.</p>
+          <p><strong>Side bets:</strong> Tie pays 3× on an initial tie. Suited pays 3× for matching suits.</p>
+        </details>
+        <details class="stats-panel">
+          <summary>Session stats</summary>
+          <div class="stats-grid">
+            <div>Player wins <strong data-stat="main_2x">0</strong></div>
+            <div>House wins <strong data-stat="main_0x">0</strong></div>
+            <div>Ties <strong data-stat="main_tie">0</strong></div>
+            <div>War 2.5x <strong data-stat="main_2.5x">0</strong></div>
+            <div>War 3.5x <strong data-stat="main_3.5x">0</strong></div>
+            <div>War 5x <strong data-stat="main_5x">0</strong></div>
+            <div>Triple tie jackpot <strong data-stat="main_100x">0</strong></div>
+            <div>Tie side bets <strong data-stat="side_tie">0</strong></div>
+            <div>Suited side bets <strong data-stat="side_suited">0</strong></div>
+            <div>Suited wins <strong data-stat="side_suited+win">0</strong></div>
+            <div>Wars lost <strong data-stat="wars_lost">0</strong></div>
+          </div>
+        </details>
+      </section>
+      </div>
+      <div class="money-bar" aria-live="polite">
+        <div><span>BUDGET</span><strong id="chips">10,000</strong></div>
+        <div><span>TOTAL BET</span><strong id="total-bet">50</strong></div>
+        <div><span>PROFIT / LOSS</span><strong id="profit">+0</strong></div>
+      </div>
+      <footer>For entertainment only · No real money</footer>
+    </main>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

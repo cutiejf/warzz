@@ -1,0 +1,22 @@
+# Stake War
+
+Stake War is a browser-playable card game and a Python/Pygame desktop game.
+
+## Play in a browser
+
+Open the [GitHub Pages version](https://cutiejf.github.io/StakeWar/) after the Pages deployment finishes. The site is served directly from the repository root; it does not require Python or an installation.
+
+## Run the desktop version
+
+Install Python 3 and Pygame, then run:
+
+```sh
+python -m pip install pygame
+python war_game.py
+```
+
+On Windows, `war.bat` launches the Python version if the Python launcher is installed.
+
+## Rules
+
+Set a main bet of at least 50 chips, optionally add tie and suited side bets, and deal. The higher card wins the main bet. A tie starts War: each player reveals up to three cards, and the first higher card wins. Side bets pay 3x; a suited side bet also receives a 2x bonus when the player wins. War payouts are 2.5x, 3.5x, or 5x based on which card wins, and three consecutive ties pay 100x the main bet.

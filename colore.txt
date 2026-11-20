@@ -1,0 +1,35 @@
+Purple Shades (7)
+#643d81
+#663e82
+#7340a3
+#623e83
+#5b3fa8
+#793fa8
+#362565
+
+Lime Shades (6)
+#8cc616
+#abe83f
+#8cc513
+#8dc410
+#a8eb3e
+#ace940
+
+Black Shades (7)
+#212121
+#181916
+#2b2b2b
+#1e1e1e
+#222222
+#1f1f1f
+#000000
+
+Grey/White Shades (7)
+#3a3a3a
+#757575
+#9a9a9a
+#e5eae6
+#b0b0ae
+#d2d1c8
+#ffffff
+
