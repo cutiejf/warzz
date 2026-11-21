@@ -51,7 +51,16 @@
   let winAnnouncement = "";
   let resultCards = null;
   let tieTrackingActive = false;
+  let lastRevealDuration = 0;
   let nextMessyHand = 10 + Math.floor(Math.random() * 11);
+  const betHistory = [];
+
+  function rememberBet() {
+    betHistory.push({
+      bets: { ...state.bets },
+      chipCounts: { main: { ...state.chipCounts.main }, tie: { ...state.chipCounts.tie } }
+    });
+  }
 
   function format(value) {
     return Math.floor(value).toLocaleString("en-US");
@@ -116,7 +125,9 @@
       const old = previous[index];
       if (!dealFromPile && cards[index] && old?.classList.contains("card-back")) {
         flipping = true;
-        const turnDuration = .7 + Math.random() * .15;
+        const tease = container === "#player-cards" && ["K", "A"].includes(cards[index].rank) && Math.random() < .7;
+        const turnDuration = tease ? 1.15 + Math.random() * .2 : .7 + Math.random() * .15;
+        lastRevealDuration = turnDuration;
         next[index] = old;
         const reveal = () => {
           if (!old.isConnected) return;
@@ -134,6 +145,8 @@
         } else {
           const turn = document.createElement("span");
           turn.className = "card-turn-stage";
+          if (tease) turn.classList.add("is-tease");
+          if (Math.random() < .5) turn.classList.add("turn-opposite");
           turn.style.setProperty("--turn-duration", `${turnDuration.toFixed(2)}s`);
           const restAngle = parseFloat(old.style.getPropertyValue("--card-rest-angle")) || 0;
           const restX = parseFloat(old.style.getPropertyValue("--card-rest-x")) || 0;
@@ -161,7 +174,7 @@
               const slot = (warStakePlaced ? 2 : 0) + (container === "#house-cards" ? 2 : 1);
               showTrackedCard(slot, cards[index]);
             }
-          }, turnDuration * 500);
+          }, turnDuration * (tease ? 600 : 500));
           inner.addEventListener("animationend", (event) => {
             if (event.target !== inner) return;
             if (!turn.isConnected) return;
@@ -189,7 +202,7 @@
       const source = $(".dealer-deck img").getBoundingClientRect();
       for (const img of next) {
         const profile = nextDealProfile();
-        const warOffset = warStakePlaced ? 32 : 0;
+        const warOffset = warStakePlaced ? 115 : 0;
         img.style.setProperty("--card-rest-x", `${(warOffset + profile.landingX + Math.random() * 2 - 1).toFixed(1)}px`);
         img.style.setProperty("--card-rest-y", `${(profile.landingY + Math.random() * 2 - 1).toFixed(1)}px`);
         img.style.setProperty("--card-rest-angle", `${(profile.landingAngle + Math.random() - .5).toFixed(1)}deg`);
@@ -202,6 +215,9 @@
         const dealDuration = (container === "#player-cards" ? .84 : .69) + profile.duration + (Math.random() * .03 - .015);
         img.style.setProperty("--deal-duration", `${dealDuration.toFixed(2)}s`);
         img.classList.add("deal-from-pile");
+        const deckTop = $(".dealer-deck img");
+        deckTop.classList.add("is-dealing-top");
+        window.setTimeout(() => deckTop.classList.remove("is-dealing-top"), 220);
       }
     }
   }
@@ -238,6 +254,7 @@
     $("#clear-bets").disabled = state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0);
     $("#halve-bets").disabled = state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0);
     $("#double-bets").disabled = state.busy || state.auto || total * 2 > state.chips;
+    $("#undo-bet").hidden = state.busy || state.auto || betHistory.length === 0;
 
     document.querySelectorAll("[data-chip]").forEach((button) => {
       button.disabled = state.busy || state.auto;
@@ -306,21 +323,58 @@
     }
   }
 
-  async function collectCards() {
-    const cards = [...document.querySelectorAll("#player-cards .playing-card, #house-cards .playing-card, #war-burn-area .war-burn-card, #war-burn-area .war-original-card")];
+  async function collectCards({ leavePlayer = false } = {}) {
+    const cards = [...document.querySelectorAll("#player-cards .playing-card, #house-cards .playing-card, #war-burn-area .war-burn-card, #war-burn-area .war-original-card, #war-burn-area .war-return-card")];
     if (!cards.length) return;
     const target = $(".dealer-deck").getBoundingClientRect();
+    const dealerArea = $("#house-cards").getBoundingClientRect();
+    const playerReturns = [];
     for (const card of cards) {
       const origin = card.getBoundingClientRect();
-      card.style.setProperty("--collect-x", `${target.left + target.width / 2 - origin.left - origin.width / 2}px`);
-      card.style.setProperty("--collect-y", `${target.top + target.height / 2 - origin.top - origin.height / 2}px`);
+      const isPlayerReturn = leavePlayer && card.closest("#player-cards") && !card.classList.contains("card-back");
+      const collectX = (isPlayerReturn ? dealerArea.left + dealerArea.width / 2 + 65 : target.left + target.width / 2) - origin.left - origin.width / 2;
+      const collectY = (isPlayerReturn ? dealerArea.top + dealerArea.height / 2 + 30 : target.top + target.height / 2) - origin.top - origin.height / 2;
+      card.style.setProperty("--collect-x", `${collectX}px`);
+      card.style.setProperty("--collect-y", `${collectY}px`);
       card.classList.remove("is-winner", "is-loser", "is-tie", "result-pulse", "result-red-fade");
+      if (card.closest("#player-cards, #house-cards") && !card.classList.contains("card-back")) {
+        if (isPlayerReturn) playerReturns.push(card);
+        const startAngle = parseFloat(card.style.getPropertyValue("--card-rest-angle")) || 0;
+        const endAngle = (16 + Math.random() * 20) * (Math.random() < .5 ? -1 : 1);
+        const turn = 1;
+        card.style.setProperty("--collect-mid-x", `${collectX * .2}px`);
+        card.style.setProperty("--collect-mid-y", `${collectY * .2}px`);
+        card.style.setProperty("--collect-after-x", `${collectX * .4}px`);
+        card.style.setProperty("--collect-after-y", `${collectY * .4}px`);
+        card.style.setProperty("--collect-mid-angle", `${startAngle}deg`);
+        card.style.setProperty("--collect-after-angle", `${startAngle}deg`);
+        card.style.setProperty("--collect-end-angle", `${endAngle}deg`);
+        card.style.setProperty("--collect-turn-mid", `${turn * 90}deg`);
+        card.style.setProperty("--collect-turn-end", `${turn * 180}deg`);
+        card.classList.add("player-return-flip");
+        window.setTimeout(() => {
+          if (!card.isConnected || !card.classList.contains("collecting")) return;
+          card.src = cardBack;
+          card.alt = "Face-down card";
+          card.classList.add("card-back");
+        }, 170);
+      }
       card.classList.add("collecting");
     }
     await delay(850);
+    const area = $("#war-burn-area");
+    const bounds = area.getBoundingClientRect();
+    for (const card of playerReturns) {
+      const rect = card.getBoundingClientRect();
+      card.style.left = `${rect.left + rect.width / 2 - bounds.left}px`;
+      card.style.top = `${rect.top + rect.height / 2 - bounds.top}px`;
+      card.style.setProperty("--card-rest-angle", card.style.getPropertyValue("--collect-end-angle"));
+      card.className = "war-return-card card-back";
+      card.remove();
+    }
     renderCards("#player-cards", []);
     renderCards("#house-cards", []);
-    $("#war-burn-area").replaceChildren();
+    area.replaceChildren(...playerReturns);
   }
 
   async function showShuffle() {
@@ -337,7 +391,7 @@
     dealer.classList.remove("deck-to-center");
     const doMessy = state.handsPlayed >= nextMessyHand;
     if (doMessy) nextMessyHand = state.handsPlayed + 10 + Math.floor(Math.random() * 11);
-    const cards = Array.from({ length: 32 }, (_, index) => {
+    const cards = Array.from({ length: 52 }, (_, index) => {
       const card = cardImage(null, "shuffle-card");
       const x = (Math.random() * 2 - 1) * 17;
       const y = (Math.random() * 2 - 1) * 17;
@@ -395,32 +449,105 @@
       setMessage("Shuffling", "", "");
     }
     messy.className = "shuffle-layer clean-stage is-aligning";
+    const stackDirection = Math.random() < .5 ? -1 : 1;
     cards.forEach((card, index) => {
-      card.className = `cut-card card-back clean-shuffle-${index < 16 ? "lower" : "upper"}`;
+      card.className = `cut-card card-back clean-shuffle-${index < 26 ? "lower" : "upper"}`;
       card.style.animation = "";
       card.style.transition = "";
       card.style.left = "";
       card.style.top = "";
       card.style.transform = "";
-      card.style.setProperty("--stack-offset", `${index % 16 * .8}px`);
-      card.style.setProperty("--shuffle-stagger", `${index % 16 * .008}s`);
-      card.style.setProperty("--shuffle-reach", `${21 + index % 5 * 1.5}px`);
-      card.style.setProperty("--shuffle-angle", `${(index < 16 ? -1 : 1) * (.6 + index % 4 * .2)}deg`);
+      card.style.setProperty("--stack-offset", `${index % 26 * .075 * stackDirection}px`);
+      card.style.setProperty("--stack-upper-adjust", `${-2 * stackDirection}px`);
+      card.style.setProperty("--stack-x", `${Math.random() < .4 ? -(3 + Math.random() * 5).toFixed(1) : 0}px`);
+      const packet = Math.floor((index % 26) / 2);
+      card.style.setProperty("--shuffle-stagger", `${packet * .012}s`);
+      card.style.setProperty("--shuffle-reach", `${25 + packet % 5 * 4}px`);
+      card.style.setProperty("--shuffle-lower-reach", `${7 + packet % 5 * 2}px`);
+      card.style.setProperty("--edge-drift", `${1 + index % 4}px`);
+      card.style.setProperty("--edge-phase", `${-(index % 8) * .08}s`);
+      card.style.setProperty("--shuffle-forward", `${-3 - packet % 4 * 3}px`);
+      card.style.setProperty("--shuffle-angle", `${(index < 26 ? -1 : 1) * .5}deg`);
       card.style.setProperty("--shuffle-own-layer", String(index + 1));
-      card.style.setProperty("--shuffle-other-layer", String(index < 16 ? index + 17 : index - 15));
+      card.style.setProperty("--shuffle-other-layer", String(index < 26 ? index + 27 : index - 25));
       card.style.zIndex = String(index + 1);
     });
     await delay(400);
     messy.classList.remove("is-aligning");
-    messy.classList.add("is-playing");
-    for (let pass = 0; pass < 8; pass += 1) {
-      await delay(220);
-      const mixed = [...cards];
-      shuffle(mixed);
-      mixed.forEach((card, index) => { card.style.zIndex = String(index + 1); });
-      await delay(260);
+    cards.forEach((card) => {
+      const position = getComputedStyle(card).transform;
+      card.style.animation = "none";
+      card.style.transform = position;
+    });
+    const order = [...cards];
+    const active = new Set();
+    const pending = [];
+    const stackPosition = (card) => ({
+      x: parseFloat(card.style.getPropertyValue("--stack-x")) || 0,
+      y: (order.length - 1 - order.indexOf(card)) * .2 * stackDirection
+    });
+    const settleInStack = (card) => {
+      const { x, y } = stackPosition(card);
+      card.style.transition = "transform .18s ease-in-out";
+      card.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(0deg)`;
+    };
+    cards.forEach(settleInStack);
+    await delay(180);
+    const candidates = cards.slice(1);
+    shuffle(candidates);
+    candidates.unshift(cards[0]);
+    for (let pass = 0; pass < 18; pass += 1) {
+      const count = Math.random() < .75 ? 2 : 3;
+      if (candidates.length < count) {
+        const available = cards.filter((card) => !active.has(card) && !candidates.includes(card));
+        shuffle(available);
+        candidates.push(...available);
+      }
+      const packet = pass % 2 === 0
+        ? order.filter((card) => !active.has(card)).slice(-count)
+        : candidates.splice(0, count);
+      for (const card of packet) {
+        const candidateIndex = candidates.indexOf(card);
+        if (candidateIndex !== -1) candidates.splice(candidateIndex, 1);
+      }
+      packet.forEach((card) => active.add(card));
+      const reach = 27 + Math.random() * 12;
+      const rise = 2 + Math.random() * 5;
+      const angle = .5 + Math.random();
+      for (const card of packet) {
+        const start = getComputedStyle(card).transform;
+        const { x: baseX, y: offset } = stackPosition(card);
+        const motion = card.animate([
+          { transform: start },
+          { transform: `translate(calc(-50% + ${reach + baseX}px), calc(-50% + ${offset - rise}px)) rotate(${angle}deg)`, offset: .5 },
+          { transform: start }
+        ], { duration: 360, easing: "ease-in-out" });
+        pending.push(motion.finished.then(() => {
+          active.delete(card);
+          settleInStack(card);
+        }));
+      }
+      await delay(180);
+      for (const card of packet) order.splice(order.indexOf(card), 1);
+      const slot = Math.floor(Math.random() * Math.max(1, order.length - 2));
+      order.splice(slot, 0, ...packet);
+      order.forEach((card, index) => { card.style.zIndex = String(index + 1); });
+      order.filter((card) => !active.has(card)).forEach(settleInStack);
     }
-    await delay(360);
+    await Promise.all(pending);
+    await delay(180);
+    const squared = cards.map((card) => {
+      const motion = card.animate([
+        { transform: getComputedStyle(card).transform },
+        { transform: "translate(-50%, -50%) rotate(0deg)" }
+      ], { duration: 450, easing: "ease-in-out", fill: "forwards" });
+      return { card, motion };
+    });
+    await Promise.all(squared.map(({ motion }) => motion.finished));
+    squared.forEach(({ card, motion }) => {
+      card.style.transform = "translate(-50%, -50%) rotate(0deg)";
+      motion.cancel();
+    });
   }
 
   async function returnDeckToDealer() {
@@ -484,12 +611,12 @@
       line.appendChild(span);
       return span;
     });
-    const pause = Math.max(initialPause, $("#message .message-outgoing") ? 500 : 0);
+    const pause = Math.max(initialPause, $("#message .message-outgoing") ? 375 : 0);
     if (pause) await delay(pause);
     for (let i = 0; i < spans.length; i += 1) {
       spans[i].style.visibility = "visible";
       spans[i].classList.add("word-visible");
-      await delay(i === spans.length - 1 ? 700 : 400);
+      await delay(i === spans.length - 1 ? 415 : 225);
     }
   }
 
@@ -521,9 +648,9 @@
     const chips = values.map(({ amount, spot }, index) => {
       const chip = document.createElement("span");
       chip.className = "dealer-payout-flight";
-      chip.textContent = format(state.bets[spot]);
       const wagerChip = $(`#${spot}-bet`).parentElement;
       const denomination = Number(wagerChip.dataset.denomination) || 5;
+      chip.textContent = format(denomination);
       chip.dataset.denomination = denomination;
       const sourceChip = document.querySelector(`.dealer-tray .chip-${denomination}`) || document.querySelector(".dealer-tray .chip-5");
       const source = sourceChip.getBoundingClientRect();
@@ -548,15 +675,16 @@
     chips.forEach((chip) => chip.remove());
   }
 
-  async function collectPlayerReturn(amount, spot) {
+  async function collectPlayerReturn(spot) {
     const table = $(".table-center");
     const bounds = table.getBoundingClientRect();
     const wager = $(`#${spot}-bet`).parentElement;
     const origin = wager.getBoundingClientRect();
     const chip = document.createElement("span");
     chip.className = "player-return-chip";
-    chip.textContent = format(amount);
-    chip.dataset.denomination = wager.dataset.denomination || 5;
+    const denomination = Number(wager.dataset.denomination) || 5;
+    chip.textContent = format(denomination);
+    chip.dataset.denomination = denomination;
     chip.style.left = `${origin.left + origin.width / 2 - bounds.left}px`;
     chip.style.top = `${origin.top + origin.height / 2 - bounds.top}px`;
     chip.style.setProperty("--return-distance", `${bounds.bottom - (origin.top + origin.height / 2) + 50}px`);
@@ -569,6 +697,7 @@
     if (state.busy || state.chips < 50) return;
     const total = totalBet();
     if (state.bets.main < 50 || total > state.chips) return;
+    betHistory.length = 0;
 
     const chipsBeforeHand = state.chips;
     tieTrackingActive = false;
@@ -580,7 +709,9 @@
     $("#message").classList.remove("result-announcement", "result-fading");
     updateTieChart();
     $("#hand-summary").textContent = "Hand in progress";
-    $("#table-results").hidden = true;
+    const previousResults = $("#table-results");
+    const hasPreviousResults = !previousResults.hidden;
+    if (hasPreviousResults) previousResults.classList.add("is-leaving");
     for (let i = 1; i <= 2; i += 1) $(`#war-unit-${i}`).hidden = true;
     $(".war-spots").classList.remove("war-payout-to-player");
     $(".war-spots").classList.remove("war-payout-to-house");
@@ -596,7 +727,16 @@
     update();
 
     setMessage("", "", "");
+    if (hasPreviousResults) {
+      await delay(600);
+      previousResults.hidden = true;
+      previousResults.classList.remove("is-leaving");
+    }
     await collectCards();
+    if (document.body.classList.contains("war-mode")) {
+      document.body.classList.remove("war-mode");
+      await delay(800);
+    }
     await naturalPause();
     const deck = makeDeck();
     await showShuffle();
@@ -622,7 +762,7 @@
     renderCards(firstTarget, [playerFirst ? player : house]);
     await delay((total >= 500 ? 1900 : 1300) + Math.random() * 300);
     renderCards(secondTarget, [playerFirst ? house : player]);
-    await delay(1300);
+    await delay(Math.max(850, Math.ceil(lastRevealDuration * 1000) + 30));
 
     let payout = 0;
     const returns = { main: 0, tie: 0 };
@@ -663,10 +803,15 @@
       state.tally.main_tie += 1;
       renderCards("#player-cards", [player], "is-tie");
       renderCards("#house-cards", [house], "is-tie");
+      setMessage("", "", "");
+      document.body.classList.add("war-mode");
+      await announceWar();
       if (tieWin) {
         setMessage("Tie bet hit!", "", "");
         await delay(1500);
       }
+      document.body.classList.add("war-awaiting");
+      await delay(500);
       setMessage("Surrender or War?", "Surrender half or match your ante to go to War.", "CHOOSE");
       const warPayout = await playWar(deck, player.rank);
       returns.main += warPayout;
@@ -681,6 +826,28 @@
     }
 
     const net = state.chips - chipsBeforeHand;
+    const dealerPayouts = [
+      { spot: "main", amount: comparison > 0 ? state.bets.main : 0 },
+      { spot: "tie", amount: returns.tie > 0 ? returns.tie - state.bets.tie : 0 }
+    ];
+    const wagered = payout - net;
+    $("#hand-summary").textContent = `Wagered ${format(wagered)} · Returned ${format(payout)} · ${net >= 0 ? "+" : "−"}${format(Math.abs(net))}`;
+    $("#result-title").textContent = net > 0 ? "WIN" : net < 0 ? "LOSS" : "EVEN";
+    const breakdown = $("#result-breakdown");
+    const resultLines = [["main", "Ante"], ["tie", "Tie"]].map(([key, label]) => {
+      const line = document.createElement("span");
+      line.textContent = `${label}: wager ${format(state.bets[key])} · returned ${format(returns[key])}`;
+      return line;
+    });
+    if (warStakePlaced) {
+      const warLine = document.createElement("span");
+      warLine.textContent = `War wager: ${format(state.bets.main)}`;
+      resultLines.splice(1, 0, warLine);
+    }
+    breakdown.replaceChildren(...resultLines);
+    $("#result-total").textContent = `Returned ${format(payout)} · Net ${net >= 0 ? "+" : "−"}${format(Math.abs(net))}`;
+    $("#table-results").hidden = false;
+    let payoutFlight;
     if (!winAnnouncement && returns.tie > 0) winAnnouncement = "TIE BET WINS";
     if (winAnnouncement) {
       $("#message").classList.add("result-announcement");
@@ -689,12 +856,12 @@
       for (const step of steps) {
         const comparisonWords = step.split(" BEATS ");
         if (comparisonWords.length === 2) {
-          await revealResultWords([comparisonWords[0], "BEATS", comparisonWords[1]], 250);
+          await revealResultWords([comparisonWords[0], "BEATS", comparisonWords[1]], 190);
         } else if (step === "HOUSE WINS" || step === "PLAYER WINS") {
           await revealResultWords(step.split(" "));
         } else {
           setMessage(step, "", "");
-          await delay(850);
+          await delay(490);
         }
       }
       setMessage(net > 0 ? "WIN " : net < 0 ? "LOSE " : "EVEN ", "", "");
@@ -702,31 +869,20 @@
       amount.className = `result-amount ${net > 0 ? "is-positive" : net < 0 ? "is-negative" : "is-even"}`;
       amount.textContent = format(Math.abs(net));
       $("#message strong").appendChild(amount);
-      await delay(1000);
+      payoutFlight = showDealerPayouts(dealerPayouts);
+      await delay(net > 0 ? 1350 : 1000);
     }
-    const dealerPayouts = [
-      { spot: "main", amount: comparison > 0 ? state.bets.main : 0 },
-      { spot: "tie", amount: returns.tie > 0 ? returns.tie - state.bets.tie : 0 }
-    ];
-    const payoutFlight = showDealerPayouts(dealerPayouts);
+    if (!payoutFlight) {
+      payoutFlight = showDealerPayouts(dealerPayouts);
+      if (dealerPayouts.some(({ amount }) => amount > 0)) await delay(1050);
+    }
     if (dealerPayouts.some(({ amount }) => amount > 0)) {
-      await delay(1250);
+      await delay(200);
       for (const { spot, amount } of dealerPayouts) {
         if (amount > 0) $(`#${spot}-bet`).parentElement.classList.add("wager-hit");
       }
       await delay(500);
     }
-    const wagered = payout - net;
-    $("#hand-summary").textContent = `Wagered ${format(wagered)} · Returned ${format(payout)} · ${net >= 0 ? "+" : "−"}${format(Math.abs(net))}`;
-    $("#result-title").textContent = net > 0 ? "WIN" : net < 0 ? "LOSS" : "EVEN";
-    const breakdown = $("#result-breakdown");
-    breakdown.replaceChildren(...[["main", "Main"], ["tie", "Tie"]].map(([key, label]) => {
-      const line = document.createElement("span");
-      line.textContent = `${label}: ${format(returns[key])}`;
-      return line;
-    }));
-    $("#result-total").textContent = `Returned ${format(payout)} · Net ${net >= 0 ? "+" : "−"}${format(Math.abs(net))}`;
-    $("#table-results").hidden = false;
     for (const key of ["main", "tie"]) {
       if (state.bets[key] > 0 && returns[key] === 0) $(`#${key}-bet`).parentElement.classList.add("wager-to-house");
     }
@@ -741,11 +897,12 @@
         $("#war-unit-2").hidden = true;
       }
       $("#message").classList.add("result-fading");
-      await collectPlayerReturn(returnedToPlayer, returns.main > 0 ? "main" : "tie");
+      await collectPlayerReturn(returns.main > 0 ? "main" : "tie");
     }
     await payoutFlight;
     $("#message").classList.add("result-fading");
     await delay(750);
+    await collectCards();
     $("#message").replaceChildren(document.createElement("strong"));
     $("#message").classList.remove("result-announcement", "result-fading");
     document.querySelectorAll(".bet-value").forEach((chip) => { chip.style.visibility = ""; });
@@ -765,6 +922,10 @@
   function chooseWar() {
     const canMatch = state.chips >= state.bets.main;
     const choices = $("#war-choices");
+    const tableBounds = $(".table-center").getBoundingClientRect();
+    const playerBounds = $("#player-cards").getBoundingClientRect();
+    choices.style.left = `${playerBounds.left + playerBounds.width / 2 - tableBounds.left}px`;
+    choices.style.top = `${Math.max(30, playerBounds.top - tableBounds.top - 28)}px`;
     choices.querySelector('[data-war-choice="surrender"]').textContent = `SURRENDER · LOSE ${format(state.bets.main - Math.floor(state.bets.main / 2))}`;
     choices.querySelector('[data-war-choice="war"]').textContent = `GO TO WAR · BET ${format(state.bets.main)}`;
     choices.querySelector('[data-war-choice="war"]').disabled = !canMatch;
@@ -793,9 +954,8 @@
     for (let i = 0; i < 3; i += 1) {
       deck.pop();
       const card = cardImage(null, "war-burn-card");
-      const direction = targetSelector === "#player-cards" ? -1 : 1;
-      const x = target.left + target.width / 2 - bounds.left - 160 + 32 + i * 4;
-      const y = target.top + target.height / 2 - bounds.top + direction * 55 + 30 + i * 3;
+      const x = target.left + target.width / 2 - bounds.left - 115 + (i - 1) * 16;
+      const y = target.top + target.height / 2 - bounds.top + 24 + i * 2;
       card.style.left = `${x}px`;
       card.style.top = `${y}px`;
       card.style.setProperty("--burn-x", `${source.left + source.width / 2 - bounds.left - x}px`);
@@ -815,11 +975,10 @@
       const rect = original.getBoundingClientRect();
       const card = original;
       card.className = "war-original-card";
-      const direction = selector === "#player-cards" ? -1 : 1;
-      card.style.left = `${rect.left + rect.width / 2 - bounds.left - 160}px`;
-      card.style.top = `${rect.top + rect.height / 2 - bounds.top + direction * 55}px`;
-      card.style.setProperty("--tie-slide-x", "160px");
-      card.style.setProperty("--tie-slide-y", `${-direction * 55}px`);
+      card.style.left = `${rect.left + rect.width / 2 - bounds.left - 115}px`;
+      card.style.top = `${rect.top + rect.height / 2 - bounds.top - 30}px`;
+      card.style.setProperty("--tie-slide-x", "115px");
+      card.style.setProperty("--tie-slide-y", "30px");
       area.appendChild(card);
     }
   }
@@ -841,17 +1000,21 @@
 
   async function playWar(deck, initialRank) {
     const choice = await chooseWar();
+    document.body.classList.remove("war-awaiting");
     setMessage("", "", "");
     if (choice === "surrender") {
+      document.body.classList.remove("war-mode");
       const returned = Math.floor(state.bets.main / 2);
       addPayout(returned);
       state.tally.surrenders += 1;
       winAnnouncement = "SURRENDER · HALF RETURNED";
       setMessage("Surrender", `Returned ${format(returned)} chips.`, "HAND OVER");
+      await delay(750);
       return returned;
     }
     state.chips -= state.bets.main;
     warStakePlaced = true;
+    document.body.classList.add("war-mode");
     update();
     keepTiedCardsVisible();
     $(".war-spots").classList.add("war-active");
@@ -859,9 +1022,6 @@
     await delay(500);
     showWarUnit(2);
     await delay(500);
-    setMessage("War", "", "");
-    await delay(1400);
-    setMessage("", "", "");
     await burnWarCards(deck, "#player-cards");
     const playerCard = draw(deck)[0];
     renderCards("#player-cards", [null], null, null, true);
@@ -883,7 +1043,7 @@
       await delay(800);
       renderCards(second, [reveal === 1 ? playerCard : houseCard]);
     }
-    await delay(1200);
+    await delay(Math.max(850, Math.ceil(lastRevealDuration * 1000) + 30));
 
     const comparison = value(playerCard) - value(houseCard);
     if (comparison === 0) {
@@ -919,12 +1079,16 @@
   }
 
   $("#clear-bets").addEventListener("click", () => {
+    if (state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0)) return;
+    rememberBet();
     state.bets = { main: 50, tie: 0 };
     state.chipCounts = { main: { 50: 1 }, tie: {} };
     update();
   });
 
   $("#halve-bets").addEventListener("click", () => {
+    if (state.busy || state.auto || (state.bets.main === 50 && state.bets.tie === 0)) return;
+    rememberBet();
     state.bets.main = Math.max(50, Math.floor(state.bets.main / 2));
     state.bets.tie = Math.floor(state.bets.tie / 2);
     for (const key of Object.keys(state.bets)) state.chipCounts[key] = chipsForAmount(state.bets[key]);
@@ -932,7 +1096,8 @@
   });
 
   $("#double-bets").addEventListener("click", () => {
-    if (totalBet() * 2 > state.chips) return;
+    if (state.busy || state.auto || totalBet() * 2 > state.chips) return;
+    rememberBet();
     for (const key of Object.keys(state.bets)) {
       state.bets[key] *= 2;
       for (const denomination of Object.keys(state.chipCounts[key])) state.chipCounts[key][denomination] *= 2;
@@ -951,6 +1116,7 @@
   document.querySelectorAll("[data-bet]").forEach((button) => {
     button.addEventListener("click", () => {
       if (state.busy || state.auto || totalBet() + state.selectedChip > state.chips) return;
+      rememberBet();
       state.bets[button.dataset.bet] += state.selectedChip;
       const counts = state.chipCounts[button.dataset.bet];
       counts[state.selectedChip] = (counts[state.selectedChip] || 0) + 1;
@@ -962,10 +1128,20 @@
     button.addEventListener("click", () => {
       if (state.busy || state.auto) return;
       const key = button.dataset.clear;
+      if (state.bets[key] === (key === "main" ? 50 : 0)) return;
+      rememberBet();
       state.bets[key] = key === "main" ? 50 : 0;
       state.chipCounts[key] = key === "main" ? { 50: 1 } : {};
       update();
     });
+  });
+
+  $("#undo-bet").addEventListener("click", () => {
+    if (state.busy || state.auto || !betHistory.length) return;
+    const previous = betHistory.pop();
+    state.bets = previous.bets;
+    state.chipCounts = previous.chipCounts;
+    update();
   });
 
   document.querySelectorAll(".deal-button").forEach((button) => {
