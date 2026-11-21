@@ -4,10 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#181916">
-    <meta name="description" content="Play Stake War, a card game of War with optional side bets.">
+    <meta name="description" content="Play Chino War, a single-deck card game of War with a tie side bet.">
     <title>Chino War</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Space+Grotesk:wght@400;500;700&display=swap">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="redesign.css">
     <script src="game.js" defer></script>
+    <script src="redesign.js" defer></script>
   </head>
   <body>
     <main class="game-shell">
@@ -16,36 +21,23 @@
           <span class="brand-mark" aria-hidden="true">♠</span>
           <span>CHINO <strong>WAR</strong></span>
         </a>
+        <div class="table-pay-chart pay-pills" aria-label="Tie bet payouts">
+          <strong class="sr-only">TIE BET PAY TABLE</strong>
+          <div data-tie-odds="4"><span>Any tie</span><span>4:1</span></div>
+          <div data-tie-odds="10"><span>Black</span><span>10:1</span></div>
+          <div data-tie-odds="25"><span>Ace</span><span>25:1</span></div>
+          <div data-tie-odds="50"><span>Double</span><span>50:1</span></div>
+          <div data-tie-odds="150"><span>Triple</span><span>150:1</span></div>
+          <div data-tie-odds="200"><span>Four kind</span><span>200:1</span></div>
+          <div data-tie-odds="420"><span>Four aces</span><span>420:1</span></div>
+        </div>
+        <div class="topbar-actions">
+          <button type="button" class="pill-button" data-open-dialog="rules-dialog">Rules</button>
+          <button type="button" class="pill-button" data-open-dialog="stats-dialog">Stats</button>
+        </div>
       </header>
 
       <div class="game-layout">
-      <section class="play-panel" aria-label="Place bets">
-        <button type="button" class="auto-button" id="auto-button">▶ &nbsp; AUTO PLAY</button>
-        <strong class="summary-label">PLACE BETS</strong>
-        <div class="chip-tray side-chip-tray" role="group" aria-label="Select chip value">
-          <span class="tray-label">CHIPS</span>
-          <button type="button" class="chip chip-5" data-chip="5" aria-pressed="false" aria-label="Select 5 chip">5</button>
-          <button type="button" class="chip chip-25" data-chip="25" aria-pressed="false" aria-label="Select 25 chip">25</button>
-          <button type="button" class="chip chip-50" data-chip="50" aria-pressed="true" aria-label="Select 50 chip">50</button>
-          <button type="button" class="chip chip-100" data-chip="100" aria-pressed="false" aria-label="Select 100 chip">100</button>
-          <button type="button" class="chip chip-500" data-chip="500" aria-pressed="false" aria-label="Select 500 chip">500</button>
-        </div>
-        <div class="side-bets">
-          <button type="button" data-bet="main">Main bet <strong data-side-value="main">50</strong></button>
-          <button type="button" data-bet="tie">Tie bet <strong data-side-value="tie">0</strong></button>
-
-        </div>
-        <div class="play-controls">
-          <div class="bet-actions" role="group" aria-label="Adjust all bets">
-            <button type="button" id="clear-bets">Clear bets</button>
-            <button type="button" id="halve-bets">½×</button>
-            <button type="button" id="double-bets">2×</button>
-          </div>
-          <button type="button" class="deal-button" id="deal-button">DEAL HAND <span aria-hidden="true">→</span></button>
-          
-          
-        </div>
-      </section>
       <section class="table" aria-label="Chino War table">
         <div class="war-banner" id="war-banner" aria-hidden="true" hidden>WAR</div>
         <div class="table-center">
@@ -58,15 +50,7 @@
           <div class="table-message" id="message" role="status" aria-live="polite">
             <strong>Place your bets</strong>
           </div>
-          <div class="table-pay-chart" aria-label="Tie bet payouts">
-            <strong>TIE BET PAY TABLE</strong>
-            <div data-tie-odds="420"><span>Four aces</span><span>420:1</span></div>
-            <div data-tie-odds="200"><span>Four of a kind</span><span>200:1</span></div>
-            <div data-tie-odds="150"><span>Triple tie</span><span>150:1</span></div>
-            <div data-tie-odds="50"><span>Double tie</span><span>50:1</span></div>
-            <div data-tie-odds="25"><span>Ace tie</span><span>25:1</span></div>
-            <div data-tie-odds="10"><span>Black tie</span><span>10:1</span></div>
-            <div data-tie-odds="4"><span>Any tie</span><span>4:1</span></div>
+          <div class="tie-hit-panel">
             <p class="tie-hit" id="tie-hit" aria-live="polite" hidden></p>
             <section class="card-tracker" aria-label="Tie bet cards">
               <span class="tracked-card"><img id="tracked-1" alt="" hidden></span>
@@ -101,57 +85,51 @@
         </div>
       </section>
 
-      <section class="control-panel" aria-label="Game controls">
-
-        <details class="rules-panel" open>
-          <summary>Rules</summary>
-          <p>Higher card wins. A main bet win pays 2× total. On a tie, surrender half the ante or match it to go to War.</p>
-          <p><strong>War:</strong> Three cards are burned before each War card is dealt. A win returns three ante units; a further tie returns four.</p>
-          <p><strong>Tie bet:</strong> Any tie 4:1; black tie 10:1; ace tie 25:1; double tie 50:1; triple tie 150:1; four of a kind 200:1; four aces 420:1. The highest applicable payout applies.</p>
-        </details>
-        <details class="stats-panel">
-          <summary>Session stats</summary>
-          <div class="stats-grid">
-            <div>Player wins <strong data-stat="main_2x">0</strong></div>
-            <div>House wins <strong data-stat="main_0x">0</strong></div>
-            <div>Ties <strong data-stat="main_tie">0</strong></div>
-            <div>Wars won <strong data-stat="wars_won">0</strong></div>
-            <div>War ties <strong data-stat="war_ties">0</strong></div>
-            <div>Surrenders <strong data-stat="surrenders">0</strong></div>
-            <div>Tie side bets <strong data-stat="side_tie">0</strong></div>
-
-            <div>Wars lost <strong data-stat="wars_lost">0</strong></div>
+      </div>
+      <section class="dock" aria-label="Game controls">
+        <div class="chip-tray dock-chips" role="group" aria-label="Select chip value">
+          <button type="button" class="chip chip-5" data-chip="5" aria-pressed="false" aria-label="Select 5 chip">5</button>
+          <button type="button" class="chip chip-25" data-chip="25" aria-pressed="false" aria-label="Select 25 chip">25</button>
+          <button type="button" class="chip chip-50" data-chip="50" aria-pressed="true" aria-label="Select 50 chip">50</button>
+          <button type="button" class="chip chip-100" data-chip="100" aria-pressed="false" aria-label="Select 100 chip">100</button>
+          <button type="button" class="chip chip-500" data-chip="500" aria-pressed="false" aria-label="Select 500 chip">500</button>
+        </div>
+        <div class="money-bar" aria-live="polite">
+          <div><span>BUDGET</span><strong id="chips">10,000</strong></div>
+          <div><span>TOTAL BET</span><strong id="total-bet">50</strong></div>
+          <div><span>PROFIT / LOSS</span><strong id="profit">+0</strong></div>
+        </div>
+        <div class="dock-actions">
+          <div class="bet-actions" role="group" aria-label="Adjust all bets">
+            <button type="button" id="clear-bets">Clear</button>
+            <button type="button" id="halve-bets" aria-label="Halve bets">½×</button>
+            <button type="button" id="double-bets" aria-label="Double bets">2×</button>
           </div>
-        </details>
+          <button type="button" class="auto-button" id="auto-button">▶ &nbsp; AUTO PLAY</button>
+          <button type="button" class="deal-button" id="deal-button">DEAL HAND <span aria-hidden="true">→</span></button>
+        </div>
       </section>
-      </div>
-      <div class="money-bar" aria-live="polite">
-        <div><span>BUDGET</span><strong id="chips">10,000</strong></div>
-        <div><span>TOTAL BET</span><strong id="total-bet">50</strong></div>
-        <div><span>PROFIT / LOSS</span><strong id="profit">+0</strong></div>
-      </div>
+      <div hidden aria-hidden="true"><span data-side-value="main">50</span><span data-side-value="tie">0</span></div>
       <footer>For entertainment only · No real money</footer>
+      <dialog class="info-dialog" id="rules-dialog" aria-labelledby="rules-title">
+        <div class="dialog-head"><h2 id="rules-title">Rules</h2><button type="button" class="pill-button" data-close-dialog>Close</button></div>
+        <p>Higher card wins. A main bet win pays 2× total. On a tie, surrender half the ante or match it to go to War.</p>
+        <p><strong>War:</strong> Three cards are burned before each War card is dealt. A win returns three ante units; a further tie returns four.</p>
+        <p><strong>Tie bet:</strong> Any tie 4:1; black tie 10:1; ace tie 25:1; double tie 50:1; triple tie 150:1; four of a kind 200:1; four aces 420:1. The highest applicable payout applies.</p>
+      </dialog>
+      <dialog class="info-dialog" id="stats-dialog" aria-labelledby="stats-title">
+        <div class="dialog-head"><h2 id="stats-title">Session stats</h2><button type="button" class="pill-button" data-close-dialog>Close</button></div>
+        <div class="stats-grid">
+          <div>Player wins <strong data-stat="main_2x">0</strong></div>
+          <div>House wins <strong data-stat="main_0x">0</strong></div>
+          <div>Ties <strong data-stat="main_tie">0</strong></div>
+          <div>Wars won <strong data-stat="wars_won">0</strong></div>
+          <div>War ties <strong data-stat="war_ties">0</strong></div>
+          <div>Surrenders <strong data-stat="surrenders">0</strong></div>
+          <div>Tie side bets <strong data-stat="side_tie">0</strong></div>
+          <div>Wars lost <strong data-stat="wars_lost">0</strong></div>
+        </div>
+      </dialog>
     </main>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,0 +1,141 @@
+/* Chino War redesign: loads after styles.css and overrides the old three-column layout.
+   Every ID, class and data attribute that game.js uses is untouched. */
+
+:root {
+  --lime: #b6f03c;
+  --violet: #7a45e0;
+  --ink: #ece8f7;
+  --soft: #b8b0d4;
+  --edge: #5b4a94;
+  --font-ui: "Space Grotesk", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --gold: #b6f03c;
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+body {
+  background: radial-gradient(ellipse at 50% 42%, #3a2670 0%, #1c1236 55%, #0f0a1a 100%);
+  background-attachment: fixed;
+}
+
+.game-shell { width: 100%; max-width: none; padding: 0; font-family: var(--font-ui); color: var(--ink); }
+
+/* ---------- Top bar: logo, pay-table pills, Rules and Stats ---------- */
+.game-shell .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 20px 28px; }
+.game-shell .brand { flex: 0 0 auto; gap: 8px; font-size: 16px; letter-spacing: .16em; white-space: nowrap; }
+.game-shell .brand-mark { color: var(--lime); }
+.game-shell .brand strong { color: var(--ink); }
+
+.game-shell .table-pay-chart {
+  position: static; top: auto; left: auto; z-index: auto;
+  flex: 1 1 auto; width: auto; min-width: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 4px;
+  font-size: 11px; line-height: 1.2; color: var(--soft); pointer-events: auto;
+}
+.game-shell .table-pay-chart > div {
+  display: flex; align-items: baseline; gap: 5px; padding: 7px 9px; border-radius: 15px;
+  background: #ffffff12; color: var(--soft); white-space: nowrap;
+  transition: background .55s ease, color .55s ease;
+}
+.game-shell .table-pay-chart > div::before { content: none; }
+.game-shell .table-pay-chart > div span:first-child,
+.game-shell .table-pay-chart > div span:last-child { order: 0; }
+.game-shell .table-pay-chart [data-state="potential"] { color: #d6c5ef; }
+.game-shell .table-pay-chart [data-state="hit"] { background: var(--lime); color: #14210a; font-weight: 700; text-shadow: none; box-shadow: 0 0 18px #b6f03c66; }
+
+.topbar-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+.pill-button {
+  min-height: 44px; padding: 0 16px; border: 1px solid var(--edge); border-radius: 22px;
+  background: transparent; color: var(--ink); font: 500 13px var(--font-ui); white-space: nowrap; cursor: pointer;
+}
+.pill-button:hover { border-color: var(--lime); color: var(--lime); }
+
+/* ---------- Table: one full-width stage ---------- */
+.game-shell .game-layout { display: flex; flex: 1 1 auto; min-height: 0; gap: 0; }
+.game-shell .table { flex: 1 1 auto; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.game-shell .table::before { display: none; }
+
+.game-shell .table-actions { display: none !important; }
+
+.game-shell #message strong,
+.game-shell .bet-spot .place-bet strong { font-family: var(--font-display); }
+
+/* Tie-hit cards sit at the right of the table, centred vertically. */
+.game-shell .tie-hit-panel { position: absolute; z-index: 3; top: 50%; right: 36px; width: 150px; transform: translateY(-50%); pointer-events: none; }
+.game-shell .tie-hit-panel .tie-hit { margin: 0 0 8px; color: var(--lime); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-align: center; }
+.game-shell .tie-hit-panel .tie-hit[hidden] { display: none; }
+.game-shell .tie-hit-panel .card-tracker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.game-shell .tie-hit-panel .tracked-card { width: 100%; min-height: 66px; border-radius: 6px; background: #ffffff0d; border: 1px solid #ffffff1f; }
+.game-shell .tie-hit-panel .tracked-card img { width: 100%; height: 62px; }
+
+/* Result: big WIN with the breakdown under it, centred below the message. */
+.game-shell .table-results:not([hidden]) {
+  position: absolute; top: calc(50% + 28px); right: 0; bottom: auto; left: 0;
+  width: max-content; max-width: 80%; min-height: 0; max-height: none; margin: 0 auto; padding: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; pointer-events: none;
+}
+.game-shell .table-results > strong { font-family: var(--font-display); font-size: clamp(30px, 3.6cqw, 46px); font-weight: 800; line-height: 1; color: var(--lime); }
+.game-shell .table-results > strong[data-result="LOSS"] { color: #ef7c75; }
+.game-shell .table-results > strong[data-result="EVEN"] { color: #e6d18b; }
+.game-shell .table-results > div { display: flex; flex-direction: row; justify-content: center; flex-wrap: wrap; gap: 2px 14px; font-size: 14px; font-weight: 500; color: #cfc8e8; }
+.game-shell .table-results > span { font-size: 14px; font-weight: 700; color: var(--ink); }
+
+/* ---------- Bottom dock ---------- */
+.dock {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px 24px;
+  padding: 14px 28px 16px; background: #0f0a1acc; border-top: 1px solid #3a2f63;
+}
+.dock .chip-tray { display: flex; flex: 0 0 auto; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; background: none; }
+.dock .chip { width: 44px; height: 44px; flex: 0 0 44px; font-size: 13px; font-weight: 700; }
+.dock .chip[aria-pressed="true"] { width: 48px; height: 48px; flex-basis: 48px; outline: none; box-shadow: 0 0 0 3px var(--lime), inset 0 0 0 2px rgb(0 0 0 / 25%); }
+
+.dock .money-bar { display: flex; flex: 0 0 auto; gap: 28px; margin: 0; padding: 0; border: 0; background: none; }
+.dock .money-bar div { display: flex; flex-direction: column; gap: 2px; }
+.dock .money-bar span { color: var(--soft); font-size: 11px; font-weight: 500; letter-spacing: .12em; white-space: nowrap; }
+.dock .money-bar strong { font-size: 20px; font-weight: 700; white-space: nowrap; }
+
+.dock-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
+.dock .bet-actions { display: flex; gap: 8px; }
+.dock .bet-actions button,
+.dock .auto-button {
+  min-height: 44px; padding: 0 14px; border: 1px solid var(--edge); border-radius: 10px;
+  background: transparent; color: var(--ink); font: 500 14px var(--font-ui); letter-spacing: 0; white-space: nowrap; cursor: pointer;
+}
+.dock #halve-bets, .dock #double-bets { width: 44px; padding: 0; }
+.dock .bet-actions button:hover:not(:disabled), .dock .auto-button:hover { border-color: var(--lime); color: var(--lime); }
+.dock .auto-button.is-active { border-color: #df7069; color: #f08a82; }
+.dock .deal-button {
+  min-height: 52px; padding: 0 28px; border-radius: 12px; background: var(--lime); color: #14210a;
+  font: 700 15px var(--font-ui); letter-spacing: .12em; white-space: nowrap; box-shadow: none;
+}
+.dock .deal-button:hover:not(:disabled) { background: #c6f75f; }
+.dock .deal-button:disabled { opacity: .5; cursor: wait; }
+
+.game-shell footer { padding: 4px 0 8px; }
+
+/* ---------- Rules and Stats popups ---------- */
+.info-dialog { width: min(440px, calc(100% - 32px)); padding: 20px 22px; border: 1px solid var(--edge); border-radius: 16px; background: #1c1236; color: var(--ink); font: 400 14px/1.5 var(--font-ui); }
+.info-dialog::backdrop { background: rgb(8 5 16 / 70%); }
+.info-dialog p { margin: 10px 0 0; color: var(--soft); }
+.info-dialog p strong { color: var(--ink); }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dialog-head h2 { margin: 0; font: 800 22px var(--font-display); }
+.info-dialog .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 14px 0 0; }
+.info-dialog .stats-grid div { display: flex; justify-content: space-between; gap: 8px; color: var(--soft); font-size: 14px; }
+.info-dialog .stats-grid strong { color: var(--ink); }
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 1100px) {
+  .game-shell .table-pay-chart > div { padding: 6px 7px; font-size: 10px; }
+  .dock .money-bar { gap: 18px; }
+}
+@media (max-width: 800px) {
+  .game-shell { height: auto; min-height: 100dvh; overflow: visible; }
+  .game-shell .topbar { flex-wrap: wrap; padding: 12px 14px; }
+  .game-shell .table-pay-chart { order: 3; flex: 1 0 100%; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .game-shell .game-layout { min-height: 70vh; }
+  .game-shell .tie-hit-panel { right: 12px; width: 96px; }
+  .dock { padding: 12px 14px; gap: 12px; justify-content: center; }
+  .dock-actions { flex-wrap: wrap; justify-content: center; }
+}
