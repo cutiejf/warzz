@@ -613,7 +613,10 @@ footer { flex: 0 0 auto; padding-top: 6px; color: #647168; font-size: 9px; text-
 .house-side .deal-from-pile { animation: deal-from-dealer-house .65s ease-out both; }
 .player-side .deal-from-pile { animation: deal-from-dealer-player .65s ease-out both; }
 @keyframes deal-from-dealer-house { from { opacity: 0; transform: translate(300px, -35px) rotate(9deg); } to { opacity: 1; transform: translate(0, 0) rotate(0); } }
+@keyframes deal-from-dealer-house { from { opacity: 0; transform: translate(var(--deal-x, 0px), var(--deal-y, 0px)) rotate(9deg); } to { opacity: 1; transform: translate(0, 0) rotate(0); } }
 @keyframes deal-from-dealer-player { from { opacity: 0; transform: translate(300px, -420px) rotate(9deg); } to { opacity: 1; transform: translate(0, 0) rotate(0); } }
+.house-side .deal-from-pile, .player-side .deal-from-pile { animation: deal-from-actual-deck var(--deal-duration, .7s) ease-out both; }
+@keyframes deal-from-actual-deck { from { opacity: 0; transform: translate(var(--deal-x, 0px), var(--deal-y, 0px)) rotate(var(--deal-tilt, 0deg)); } to { opacity: 1; transform: translate(0, 0) rotate(0); } }
 @media (min-width: 801px) {
   .bet-controls { left: 2.5%; width: 26%; column-gap: 38px; row-gap: 34px; transform: rotate(-6deg); transform-origin: center; }
   .bet-controls .main-spot { width: min(150px, 12cqw, 18cqh); }
@@ -639,3 +642,535 @@ footer { flex: 0 0 auto; padding-top: 6px; color: #647168; font-size: 9px; text-
 .house-side, .player-side { z-index: 2; }
 .shoe-cut-marker { position: absolute; top: 50%; left: 50%; width: 90px; height: 126px; border: 2px solid #bd9be4; border-radius: 7px; background: linear-gradient(145deg, #a262df, #49216f); box-shadow: 0 0 22px #a262df88; animation: insert-shoe-card 1.5s ease-in-out both; }
 @keyframes insert-shoe-card { 0% { opacity: 0; transform: translate(90px, -50%) rotate(12deg); } 25% { opacity: 1; } 75% { opacity: 1; transform: translate(-50%, -50%) rotate(0); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(.96); } }
+.war-burn-card { position: absolute; top: 15%; right: 12%; width: 150px; height: 150px; object-fit: contain; animation: war-burn .35s ease-in forwards; }
+@keyframes war-burn { from { opacity: 1; transform: translate(0, 0) rotate(0); } to { opacity: 0; transform: translate(-140px, 45px) rotate(-18deg); } }
+.war-spots { position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%) rotate(6deg); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.war-spot { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #a991be; border-radius: 50%; color: #c7b6d7; font-size: 11px; font-weight: 800; background: rgb(20 13 28 / 20%); }
+.war-unit { position: absolute; inset: -2px; display: grid; place-items: center; border: 3px dashed #eee; border-radius: 50%; background: var(--chip-color, #7340a3); color: var(--chip-text, #fff); font-size: 9px; font-weight: 800; box-shadow: 0 3px 7px #0008; }
+.war-unit[hidden] { display: none; }
+.war-spots { left: 50%; top: 63%; transform: translate(-50%, 0); flex-direction: row; gap: 14px; z-index: 3; }
+.war-unit { isolation: isolate; }
+.war-unit.has-extra-unit::before { content: ""; position: absolute; z-index: -1; inset: -3px; border: 3px dashed #eee; border-radius: 50%; background: var(--chip-color, #7340a3); transform: translate(5px, -5px); box-shadow: 0 2px 5px #0008; }
+.war-payout-to-player .war-unit:not([hidden]) { animation: war-chips-to-player .7s ease-in forwards; }
+@keyframes war-chips-to-player { to { transform: translateY(160px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .war-payout-to-player .war-unit:not([hidden]) { animation-duration: .01ms; } }
+.war-spot { background: radial-gradient(circle at 35% 28%, #51425d, #211a2a 68%); box-shadow: inset 0 -3px 5px #0007; }
+.war-spot::before { content: ""; position: absolute; width: 11px; height: 9px; left: 50%; top: -9px; border-top: 2px solid #a08b72; border-right: 2px solid #a08b72; border-radius: 0 9px 0 0; transform: translateX(-15%) rotate(-15deg); }
+.war-spot::after { content: ""; position: absolute; top: -12px; left: calc(50% + 8px); width: 5px; height: 5px; border-radius: 50%; background: #72635c; opacity: .35; }
+.war-active .war-spot::after { background: #ffe5a3; opacity: 1; box-shadow: 0 0 5px 2px #ffc451, 0 0 13px 5px #ff7a2d; animation: wick-glow .7s ease-in-out infinite alternate; }
+@keyframes wick-glow { to { transform: scale(.65); opacity: .65; } }
+/* The War circles sit just inside and above Tie. */
+.war-spot { background: transparent; box-shadow: none; }
+.war-spot::before, .war-spot::after { content: none; }
+.war-spots { left: calc(100% + 8px); top: -12px; transform: rotate(20deg); flex-direction: row; gap: 9px; }
+.war-spot:nth-child(2) { transform: translateY(12px); }
+@media (min-width: 801px) {
+  .bet-controls .main-spot, .bet-controls .tie-spot { translate: 0 -10px; }
+}
+/* A loose diamond: Tie at the left, War spots above and inside, Ante below. */
+.war-spots { left: calc(100% + 3px); top: -18px; gap: 8px; transform: none; }
+.war-spot:nth-child(2) { transform: translateY(35px); }
+@media (min-width: 801px) { .bet-controls .main-spot { translate: 20px -10px; } }
+.war-spot:nth-child(1) { transform: translate(6px, -18px); }
+@media (min-width: 801px) { .bet-controls .tie-spot { translate: 8px 4px; } }
+@media (min-width: 801px) { .tie-spot .war-spots { translate: -8px -14px; } }
+.war-spot { border-color: rgb(169 145 190 / 35%); color: rgb(199 182 215 / 42%); }
+@media (min-width: 801px) {
+  .bet-controls .main-spot { translate: 45px -10px; }
+  .bet-controls .tie-spot { translate: -12px 20px; }
+  .house-side { top: 0; }
+  .player-side { bottom: 0; }
+}
+@media (min-width: 801px) { .bet-controls .tie-spot { translate: -4px 28px; } }
+@media (min-width: 801px) { .bet-controls .main-spot { translate: 53px -2px; } }
+@media (min-width: 801px) {
+  .bet-controls .main-spot { translate: 61px 6px; }
+  .bet-controls .tie-spot { translate: 4px 36px; }
+}
+@media (min-width: 801px) { .bet-controls .tie-spot { translate: -8px 43px; } }
+.war-spot:nth-child(2) { transform: translate(4px, 31px); }
+.war-spot:nth-child(2) { transform: translate(8px, 35px); }
+.war-spot:nth-child(2) { transform: translate(8px, 33px); }
+.war-spot:nth-child(2) { transform: translate(8px, 35px); }
+.table-pay-chart { position: absolute; top: 7%; left: 4%; z-index: 1; width: min(190px, 21%); color: rgb(218 202 230 / 55%); font-size: 11px; line-height: 1.7; pointer-events: none; }
+.table-pay-chart strong { display: block; margin-bottom: 5px; font-size: 10px; letter-spacing: .14em; }
+.table-pay-chart div { display: flex; justify-content: space-between; gap: 12px; }
+.table-message { z-index: 5; top: 50%; left: 50%; width: min(44%, 460px); padding: 0; transform: translate(-50%, -50%); align-items: center; text-align: center; }
+.table-message.is-shuffling { top: 8%; }
+.shuffle-card { animation-duration: 3s; }
+.house-side .playing-card.collecting, .player-side .playing-card.collecting { position: relative; z-index: 10; animation: collect-to-deck .85s ease-in both; filter: none; }
+@keyframes collect-to-deck { to { transform: translate(var(--collect-x), var(--collect-y)) rotate(8deg) scale(.75); opacity: 0; } }
+@media (min-width: 801px) { .table-message { top: 50%; left: 50%; width: min(44%, 460px); padding: 0; transform: translate(-50%, -50%); align-items: center; text-align: center; } .table-message.is-shuffling { top: 8%; } }
+.table-pay-chart { width: min(165px, 21%); font-size: 13px; line-height: 1.6; }
+.table-pay-chart strong { font-size: 11px; }
+.table-pay-chart div { gap: 8px; }
+.table-pay-chart div { display: flex; align-items: baseline; gap: 4px; }
+.table-pay-chart div::before { content: ""; order: 1; flex: 1; min-width: 8px; border-bottom: 1px dotted currentColor; opacity: .65; }
+.table-pay-chart div span:first-child { order: 0; white-space: nowrap; }
+.table-pay-chart div span:last-child { order: 2; white-space: nowrap; }
+/* Keep every game message in the same place above the table artwork. */
+.table-message, .table-message.is-shuffling { z-index: 20; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.war-choices { z-index: 21; }
+#deck-choices { z-index: 30; pointer-events: auto; }
+#deck-choices button { pointer-events: auto; }
+@media (min-width: 801px) { .table-message, .table-message.is-shuffling { top: 50%; left: 50%; transform: translate(-50%, -50%); } }
+.table-message { background: rgb(20 14 27 / 88%); border-radius: 8px; padding: 10px 16px; }
+@media (min-width: 801px) { .table-message { padding: 10px 16px; } }
+/* The message screen sits above the payout chart, away from the cards. */
+.table-message, .table-message.is-shuffling { top: 5%; left: 4%; width: min(240px, 22%); min-height: 64px; padding: 10px 14px; transform: none; justify-content: center; border: 1px solid rgb(166 125 192 / 38%); background: rgb(17 14 22 / 88%); box-shadow: inset 0 0 15px rgb(114 69 144 / 15%); }
+.table-message strong { font-size: clamp(18px, 1.8cqw, 25px); }
+.table-pay-chart { top: 19%; }
+@media (min-width: 801px) { .table-message, .table-message.is-shuffling { top: 5%; left: 4%; width: min(240px, 22%); padding: 10px 14px; transform: none; } }
+.table-message, .table-message.is-shuffling { top: 28px; left: 30px; width: 260px; min-height: 84px; }
+.table-pay-chart { top: 24%; }
+#war-choices { top: calc(5% + 94px); left: 4%; width: min(260px, 24%); transform: none; gap: 8px; z-index: 30; }
+#war-choices button { flex: 1 1 0; min-height: 42px; font-size: 11px; }
+@media (min-width: 801px) { .table-message, .table-message.is-shuffling { top: 28px; left: 30px; width: 260px; min-height: 84px; } }
+@media (min-width: 801px) {
+  .dealer-tray { transform: rotate(115deg); translate: 0 -8px; }
+  .dealer-tray .dealer-stack .chip { transform: rotate(-115deg); }
+}
+@media (min-width: 801px) { .dealer-tray { translate: 18px -20px; } }
+.table-center::before { width: min(46%, 470px); }
+.table-caption svg { font-size: 14px; letter-spacing: 4px; }
+.table-caption svg { letter-spacing: 2px; }
+.payout-to-one { letter-spacing: 0; word-spacing: -3px; }
+.table-caption svg { font-size: 16px; }
+.table-caption svg text { animation: table-letter-glow 16s ease-in-out infinite alternate; }
+@keyframes table-letter-glow { from { opacity: 1; } to { opacity: .42; } }
+@media (prefers-reduced-motion: reduce) { .table-caption svg text { animation: none; } }
+.table-caption svg { letter-spacing: 1.5px; word-spacing: 2px; }
+.deck-label { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); color: rgb(160 133 181 / 45%); font-size: 10px; font-weight: 700; letter-spacing: .14em; white-space: nowrap; pointer-events: none; }
+.table-caption svg { font-size: 18px; }
+.table-center::before { top: 47%; width: min(52%, 540px); }
+.deck-label { color: #46315c; font: 800 14px system-ui, sans-serif; letter-spacing: 1.5px; animation: table-letter-glow 16s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .deck-label { animation: none; } }
+.table-center::before { top: 50%; width: min(46%, 470px); }
+.deck-label { font-size: 17px; letter-spacing: .28em; color: rgb(94 66 119 / 30%); }
+.card-back, .choice-deck, .dealer-deck { filter: grayscale(1) brightness(.38) contrast(1.2); }
+.table-caption svg { font-size: 15px; }
+.table-center::before { top: 49%; width: min(43%, 440px); }
+.table-caption svg { word-spacing: 10px; }
+.payout-to-one { letter-spacing: 0; word-spacing: -6px; }
+.payout-to-one { letter-spacing: 0; word-spacing: 0; }
+.table-caption svg { word-spacing: 4px; }
+.odds-colon { word-spacing: 0; letter-spacing: 1px; }
+@media (min-width: 801px) {
+  .dealer-tray { translate: 65px -55px; }
+  .dealer-deck { transform: translateX(15px); }
+}
+@media (min-width: 801px) {
+  .dealer-tray { transform: rotate(120deg); }
+  .dealer-tray .dealer-stack .chip { transform: rotate(-120deg); }
+  .dealer-deck { transform: translate(30px, 12px); }
+}
+.dealer-deck::before, .dealer-deck::after { background-image: url("cards/patterned_back.svg"); }
+.playing-card:not(.card-back) { filter: brightness(.92); }
+.playing-card.is-winner { filter: brightness(.92) drop-shadow(0 0 8px #82df9c) drop-shadow(0 0 16px rgb(130 223 156 / 65%)); }
+.playing-card.is-loser { filter: brightness(.92) drop-shadow(0 0 8px #e77a72) drop-shadow(0 0 16px rgb(231 122 114 / 65%)); }
+.playing-card.is-tie { filter: brightness(.92) drop-shadow(0 0 8px #edc975) drop-shadow(0 0 16px rgb(237 201 117 / 65%)); }
+#war-choices { top: 76%; left: 50%; width: min(420px, 45%); transform: translateX(-50%); gap: 12px; }
+#war-choices button { flex: 1 1 0; min-height: 48px; font-size: 12px; }
+#war-choices { top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(460px, 80%); }
+.wager-to-player { animation: wager-to-player .8s ease-in forwards; }
+.wager-to-house, .war-payout-to-house .war-unit:not([hidden]) { animation: wager-to-house .8s ease-in forwards; }
+@keyframes wager-to-player { to { translate: 0 150px; opacity: 0; } }
+@keyframes wager-to-house { to { translate: 120px -200px; opacity: 0; } }
+.war-unit.from-dealer { animation: dealer-war-chip .65s ease-out both; }
+@keyframes dealer-war-chip { from { opacity: 0; translate: var(--dealer-chip-x) var(--dealer-chip-y); } to { opacity: 1; translate: 0 0; } }
+.dealer-payout-flight { position: absolute; z-index: 22; display: grid; width: 42px; height: 42px; place-items: center; border: 3px dashed #eee; border-radius: 50%; background: var(--chip-color, #7340a3); color: var(--chip-text, #fff); font-size: 10px; font-weight: 800; box-shadow: 0 4px 10px #0008; pointer-events: none; animation: dealer-payout-flight .95s ease-in-out both; }
+@keyframes dealer-payout-flight { from { opacity: 0; transform: translate(-50%, -50%); } 15% { opacity: 1; } to { opacity: 0; transform: translate(calc(-50% + var(--payout-x)), calc(-50% + var(--payout-y))); } }
+.clean-shuffle-lower { animation: clean-shuffle-lower 2.2s ease-in-out both; }
+.clean-shuffle-upper { animation: clean-shuffle-upper 2.2s ease-in-out both; }
+@keyframes clean-shuffle-lower { 0%, 12% { transform: translate(-50%, calc(-50% + var(--stack-offset))); } 30%, 45% { transform: translate(calc(-50% - 42px), calc(-50% + var(--stack-offset))); } 65%, 100% { transform: translate(-50%, calc(-50% + var(--stack-offset))); } }
+@keyframes clean-shuffle-upper { 0%, 12% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); } 30%, 45% { transform: translate(calc(-50% + 42px), calc(-50% - 8px + var(--stack-offset))); } 65%, 100% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); } }
+.dealer-payout-flight { animation: dealer-to-rim-and-player 2.1s ease-in-out both; }
+@keyframes dealer-to-rim-and-player {
+  0% { opacity: 1; transform: translate(-50%, -50%); }
+ 45%, 60% { opacity: 1; transform: translate(calc(-50% + var(--rim-x)), calc(-50% + var(--rim-y))); }
+ 100% { opacity: 0; transform: translate(calc(-50% + var(--payout-x)), calc(-50% + var(--payout-y))); }
+}
+.table-pay-chart [data-state="hit"] { color: #c8ef7c; font-weight: 800; text-shadow: 0 0 8px rgb(171 232 63 / 35%); }
+.table-pay-chart [data-state="potential"] { color: #c5a5db; animation: tie-potential 2.4s ease-in-out infinite alternate; }
+.table-pay-chart .tie-hit { margin: 7px 0 0; color: #c8ef7c; font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.table-pay-chart .tie-hit[hidden] { display: none; }
+@keyframes tie-potential { from { opacity: .5; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .table-pay-chart [data-state="potential"] { animation: none; } }
+.wager-hit { filter: drop-shadow(0 0 8px #e9dc9a) drop-shadow(0 0 14px #a8df55); }
+@keyframes dealer-to-rim-and-player {
+  0% { opacity: 1; transform: translate(-50%, -50%); }
+ 30% { opacity: 1; transform: translate(calc(-50% + var(--middle-x)), calc(-50% + var(--middle-y))); }
+ 60%, 78% { opacity: 1; transform: translate(calc(-50% + var(--rim-x)), calc(-50% + var(--rim-y))); box-shadow: 0 0 14px #d8ef8a, 0 0 24px #a8df55; }
+ 100% { opacity: 0; transform: translate(calc(-50% + var(--rim-x)), calc(-50% + var(--rim-y))); }
+}
+.clean-shuffle-lower { animation: clean-interleave-lower .9s ease-in-out 4 both; animation-delay: var(--shuffle-stagger, 0s); }
+.clean-shuffle-upper { animation: clean-interleave-upper .9s ease-in-out 4 both; animation-delay: var(--shuffle-stagger, 0s); }
+@keyframes clean-interleave-lower {
+  0%, 100% { transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+ 25% { transform: translate(calc(-50% - 38px), calc(-50% + var(--stack-offset) + 8px)) rotate(-5deg); }
+ 55% { transform: translate(calc(-50% + 18px), calc(-50% + var(--stack-offset) - 4px)) rotate(3deg); }
+ 80% { transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+}
+@keyframes clean-interleave-upper {
+  0%, 100% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+ 25% { transform: translate(calc(-50% + 38px), calc(-50% - 8px + var(--stack-offset) - 8px)) rotate(5deg); }
+ 55% { transform: translate(calc(-50% - 18px), calc(-50% - 8px + var(--stack-offset) + 4px)) rotate(-3deg); }
+ 80% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+}
+.player-return-chip { position: absolute; z-index: 23; display: grid; width: 42px; height: 42px; place-items: center; border: 3px dashed #eee; border-radius: 50%; background: var(--chip-color, #7340a3); color: var(--chip-text, #fff); font-size: 10px; font-weight: 800; pointer-events: none; animation: player-return-straight .9s ease-in forwards; }
+@keyframes player-return-straight { from { transform: translate(-50%, -50%); opacity: 1; } to { transform: translate(-50%, calc(-50% + var(--return-distance))); opacity: 1; } }
+#message.result-announcement { top: 50%; left: 50%; width: min(65%, 620px); min-height: 0; transform: translate(-50%, -50%); text-align: center; }
+#message.result-announcement strong { font-size: clamp(18px, 2.5cqw, 30px); }
+#message.result-announcement { z-index: 40; display: flex; align-items: center; justify-content: center; background: rgb(18 12 25 / 94%); }
+#message.result-announcement { top: 38%; background: transparent; border: 0; box-shadow: none; padding: 0; }
+#message.result-announcement strong { text-shadow: 0 2px 5px #100b17, 0 0 12px #100b17; }
+#message.result-announcement { opacity: 1; transition: opacity .7s ease; }
+#message.result-announcement.result-fading { opacity: 0; }
+#message.result-announcement { top: 50%; left: 50%; transform: translate(-50%, -50%); justify-content: center; align-items: center; text-align: center; }
+#message.result-announcement strong { display: block; width: 100%; text-align: center; }
+.result-amount.is-positive { color: #abe83f; }
+.result-amount.is-negative { color: #ef7c75; }
+.result-amount.is-even { color: #e6d18b; }
+.war-burn-area { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.war-burn-area .war-burn-card { position: absolute; right: auto; width: 150px; height: 150px; object-fit: contain; animation: war-burn-to-pile .4s ease-out both; }
+@keyframes war-burn-to-pile { from { opacity: 0; transform: translate(calc(-50% + var(--burn-x)), calc(-50% + var(--burn-y))) rotate(0); } to { opacity: 1; transform: translate(-50%, -50%) rotate(var(--burn-angle)); } }
+#war-burn-area .war-burn-card.collecting { animation: collect-burn-to-deck .85s ease-in both; }
+@keyframes collect-burn-to-deck { from { transform: translate(-50%, -50%) rotate(var(--burn-angle)); opacity: 1; } to { transform: translate(calc(-50% + var(--collect-x)), calc(-50% + var(--collect-y))) rotate(8deg) scale(.75); opacity: 0; } }
+.war-original-card { position: absolute; width: 150px; height: 150px; object-fit: contain; transform: translate(-50%, -50%); filter: brightness(.92); }
+#war-burn-area .war-original-card.collecting { animation: collect-original-to-deck .85s ease-in both; }
+@keyframes collect-original-to-deck { from { transform: translate(-50%, -50%); opacity: 1; } to { transform: translate(calc(-50% + var(--collect-x)), calc(-50% + var(--collect-y))) rotate(8deg) scale(.75); opacity: 0; } }
+.message-screen { position: absolute; z-index: 4; top: 28px; left: 30px; width: 260px; min-height: 84px; border: 1px solid rgb(166 125 192 / 38%); border-radius: 8px; background: rgb(17 14 22 / 88%); box-shadow: inset 0 0 15px rgb(114 69 144 / 15%); pointer-events: none; }
+#message.table-message { border: 0; background: transparent; box-shadow: none; }
+.card-tracker { display: flex; gap: 12px; margin-top: 14px; }
+.tracked-card { display: flex; flex-direction: column; align-items: center; width: 56px; min-height: 72px; border: 1px solid rgb(166 125 192 / 24%); border-radius: 5px; background: rgb(15 12 20 / 16%); }
+.tracked-card small { margin-top: 3px; font-size: 8px; font-weight: 700; letter-spacing: .08em; }
+.tracked-card img { display: block; width: 50px; height: 50px; object-fit: contain; }
+.tracked-card img[hidden] { display: none; }
+#message.table-message, #message.table-message.is-shuffling, #message.result-announcement { position: absolute; z-index: 50; top: 50%; left: 50%; width: min(65%, 620px); min-height: 0; padding: 0; transform: translate(-50%, -50%); border: 0; background: transparent; box-shadow: none; display: flex; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+#message.table-message strong { text-shadow: 0 2px 5px #100b17, 0 0 12px #100b17; }
+#war-choices { top: 64%; z-index: 51; }
+.card-tracker { display: flex; gap: 4px; width: 100%; margin-top: 12px; opacity: .35; }
+.card-tracker.is-active { opacity: 1; }
+.tracked-card { width: 37px; min-height: 51px; justify-content: center; }
+.tracked-card img { width: 37px; height: 45px; object-fit: contain; }
+.tracked-card img[hidden] { display: none; }
+@media (min-width: 801px) {
+  .table-pay-chart { top: 12%; left: 3.5%; width: clamp(175px, 16cqw, 210px); }
+}
+.card-tracker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; margin-top: 14px; }
+.tracked-card { width: 100%; min-width: 0; min-height: 54px; }
+.tracked-card img { width: 100%; height: 50px; }
+.stationary-deck { transform: translate(-50%, -50%); }
+.settle-deck { position: absolute; top: 50%; left: 50%; width: 150px; height: 150px; object-fit: contain; animation: settle-deck-at-dealer 1s ease-in-out both; }
+@keyframes settle-deck-at-dealer { 0%, 12% { opacity: 1; transform: translate(-50%, -50%); } 78% { opacity: 1; transform: translate(calc(-50% + var(--settle-x)), calc(-50% + var(--settle-y))); } 100% { opacity: 0; transform: translate(calc(-50% + var(--settle-x)), calc(-50% + var(--settle-y))); } }
+.cut-lower, .cut-upper { animation-duration: 2.1s; }
+.burn-card { animation-duration: 1.5s; }
+.settle-deck { animation-duration: 1.3s; }
+#message.message-fade { animation: brief-table-message 1.8s ease forwards; }
+@keyframes brief-table-message { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #message.message-fade { animation: none; } }
+#message.message-fade.is-dealing { animation-duration: 1.1s; }
+@keyframes burn-slide {
+  0%, 15% { transform: translate(-50%, -50%) rotate(0); opacity: 1; }
+  100% { transform: translate(calc(-50% + 60cqw), -50%) rotate(90deg); opacity: 1; }
+}
+#message.message-fade.is-cut-status { animation-duration: 1.2s; }
+#message.result-announcement strong.comparison-beats { display: flex; justify-content: center; gap: .35em; }
+#message.message-fade.is-dealing { animation-duration: .85s; }
+.playing-card.result-pulse { animation: winner-glow-pulse 1.3s ease-in-out both; }
+@keyframes winner-glow-pulse {
+  0% { filter: brightness(.92); }
+  28% { filter: brightness(.98) drop-shadow(0 0 13px #9bf6ad) drop-shadow(0 0 23px rgb(130 223 156 / 80%)); }
+  52% { filter: brightness(.92) drop-shadow(0 0 4px #82df9c); }
+  76% { filter: brightness(.96) drop-shadow(0 0 11px #9bf6ad) drop-shadow(0 0 20px rgb(130 223 156 / 70%)); }
+  100% { filter: brightness(.92) drop-shadow(0 0 8px #82df9c) drop-shadow(0 0 16px rgb(130 223 156 / 65%)); }
+}
+@media (prefers-reduced-motion: reduce) { .playing-card.result-pulse { animation: none; } }
+.war-original-card { animation: tie-card-to-war-pile .75s ease-in-out both; }
+@keyframes tie-card-to-war-pile { from { transform: translate(calc(-50% + var(--tie-slide-x)), calc(-50% + var(--tie-slide-y))); } to { transform: translate(-50%, -50%); } }
+.playing-card.result-red-fade { animation: loser-glow-fade .85s ease-in-out both; }
+@keyframes loser-glow-fade {
+  from { filter: brightness(.92); }
+  to { filter: brightness(.92) drop-shadow(0 0 8px #e77a72) drop-shadow(0 0 16px rgb(231 122 114 / 65%)); }
+}
+@media (prefers-reduced-motion: reduce) { .playing-card.result-red-fade { animation: none; } }
+.card-outgoing { position: absolute; z-index: 1; object-fit: contain; pointer-events: none; animation: card-back-crossfade .65s ease both; }
+.playing-card.card-soft-reveal { animation: card-face-crossfade .65s ease both; }
+@keyframes card-back-crossfade { from { opacity: 1; } to { opacity: 0; } }
+@keyframes card-face-crossfade { from { opacity: 0; } to { opacity: 1; } }
+#message .message-incoming { animation: message-text-in .5s ease both; }
+#message .message-outgoing { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; animation: message-text-out .5s ease both; }
+@keyframes message-text-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes message-text-out { from { opacity: var(--outgoing-opacity, 1); } to { opacity: 0; } }
+.comparison-beats .word-visible { animation: result-word-in .45s ease both; }
+@keyframes result-word-in { from { opacity: 0; } to { opacity: 1; } }
+.dealer-deck.deck-returned { animation: dealer-deck-appear .3s ease both; }
+@keyframes dealer-deck-appear { from { opacity: 0; } to { opacity: 1; } }
+#deck-choices:not([hidden]), #war-choices:not([hidden]) { animation: choices-in .4s ease both; }
+#deck-choices.is-closing, #war-choices.is-closing { animation: choices-out .3s ease both; pointer-events: none; }
+@keyframes choices-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes choices-out { from { opacity: 1; } to { opacity: 0; } }
+.war-unit.unit-placed { animation: choices-in .4s ease both; }
+@keyframes dealer-to-rim-and-player {
+  0% { opacity: 0; transform: translate(-50%, -50%); }
+  10% { opacity: 1; transform: translate(-50%, -50%); }
+  30% { opacity: 1; transform: translate(calc(-50% + var(--middle-x)), calc(-50% + var(--middle-y))); }
+  60%, 78% { opacity: 1; transform: translate(calc(-50% + var(--rim-x)), calc(-50% + var(--rim-y))); box-shadow: 0 0 14px #d8ef8a, 0 0 24px #a8df55; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--rim-x)), calc(-50% + var(--rim-y))); }
+}
+.bet-value { transition: filter .4s ease; }
+.table-pay-chart [data-tie-odds] { transition: color .55s ease, text-shadow .55s ease; }
+.table-pay-chart .tie-hit:not([hidden]), .tracked-card img:not([hidden]), .war-unit.has-extra-unit::before { animation: choices-in .45s ease both; }
+/* Gentle handoffs between the dealer, loose cards and the centred pile. */
+.playing-card { animation: none; }
+.shuffle-arrival { position: absolute; top: 50%; left: 50%; width: 150px; height: 150px; object-fit: contain; animation: deck-to-shuffle .9s ease-in-out both; }
+@keyframes deck-to-shuffle { from { transform: translate(calc(-50% + var(--arrival-x)), calc(-50% + var(--arrival-y))); } to { transform: translate(-50%, -50%); } }
+.dealer-deck.deck-departing { animation: dealer-deck-depart .45s ease both; }
+@keyframes dealer-deck-depart { from { opacity: 1; } to { opacity: 0; } }
+.shuffle-layer { position: absolute; inset: 0; isolation: isolate; }
+.shuffle-layer.is-entering { animation: shuffle-layer-in .5s ease both; }
+.shuffle-layer.is-leaving { animation: shuffle-layer-out .5s ease both; }
+.clean-stage:not(.is-playing) .clean-shuffle-lower, .clean-stage:not(.is-playing) .clean-shuffle-upper, .cut-stage:not(.is-playing) .cut-lower, .cut-stage:not(.is-playing) .cut-upper { animation-play-state: paused; }
+@keyframes shuffle-layer-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes shuffle-layer-out { from { opacity: 1; } to { opacity: 0; } }
+.table-center:has(#deck-choices:not([hidden])) .choice-deck { animation: choices-in .5s ease both; }
+.table-center:has(#deck-choices.is-closing) .choice-deck { animation: choices-out .3s ease both; }
+@keyframes settle-deck-at-dealer { 0% { opacity: 0; transform: translate(-50%, -50%); } 18% { opacity: 1; } 78% { opacity: 1; transform: translate(calc(-50% + var(--settle-x)), calc(-50% + var(--settle-y))); } 100% { opacity: 0; transform: translate(calc(-50% + var(--settle-x)), calc(-50% + var(--settle-y))); } }
+#message .message-incoming.message-wait { animation-delay: .5s; }
+.playing-card.result-pulse { animation: winner-glow-enter 1s ease-out forwards, winner-glow-calm 3s ease-in-out 1s infinite alternate; }
+@keyframes winner-glow-enter { from { filter: brightness(.92); } to { filter: brightness(.92) drop-shadow(0 0 8px #82df9c) drop-shadow(0 0 16px rgb(130 223 156 / 65%)); } }
+@keyframes winner-glow-calm { from { filter: brightness(.92) drop-shadow(0 0 8px #82df9c) drop-shadow(0 0 16px rgb(130 223 156 / 65%)); } to { filter: brightness(.94) drop-shadow(0 0 11px #9beaab) drop-shadow(0 0 20px rgb(130 223 156 / 70%)); } }
+.playing-card.result-red-fade { animation: loser-glow-fade 1.2s ease-in-out forwards, loser-glow-calm 3s ease-in-out 1.2s infinite alternate; }
+@keyframes loser-glow-calm { from { filter: brightness(.92) drop-shadow(0 0 8px #e77a72) drop-shadow(0 0 16px rgb(231 122 114 / 65%)); } to { filter: brightness(.94) drop-shadow(0 0 10px #ed8b83) drop-shadow(0 0 19px rgb(231 122 114 / 70%)); } }
+.house-side .playing-card.collecting.result-pulse, .player-side .playing-card.collecting.result-pulse { animation: collect-to-deck .85s ease-in both, winner-glow-calm 3s ease-in-out infinite alternate; }
+.house-side .playing-card.collecting.result-red-fade, .player-side .playing-card.collecting.result-red-fade { animation: collect-to-deck .85s ease-in both, loser-glow-calm 3s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .playing-card.result-pulse, .playing-card.result-red-fade { animation: none; } }
+#message.message-fade:has(.message-wait) { animation-delay: .5s; }
+#message.message-fade.is-cut-status { animation-duration: 2.2s; }
+.playing-card.card-flipping { animation: card-turn-over .8s ease-in-out both; backface-visibility: hidden; }
+@keyframes card-turn-over { 0% { transform: perspective(700px) rotateY(0); } 50% { transform: perspective(700px) rotateY(90deg); } 100% { transform: perspective(700px) rotateY(0); } }
+@media (prefers-reduced-motion: reduce) { .playing-card.card-flipping { animation: none; } }
+/* The deck and its cards stay solid through the intro. */
+.dealer-deck.deck-to-center { animation: dealer-deck-to-center .9s ease-in-out both; }
+@keyframes dealer-deck-to-center { from { translate: 0 0; } to { translate: var(--deck-center-x) var(--deck-center-y); } }
+.shuffle-layer.pile-returning { animation: solid-pile-return 1.3s ease-in-out both; }
+@keyframes solid-pile-return { from { transform: translate(0, 0); } to { transform: translate(var(--settle-x), var(--settle-y)); } }
+.table-center:has(#shuffle-animation:not([hidden])) .choice-deck { display: none; }
+.clean-stage.is-aligning .clean-shuffle-lower { animation: align-lower .4s ease-out both; animation-play-state: running; }
+.clean-stage.is-aligning .clean-shuffle-upper { animation: align-upper .4s ease-out both; animation-play-state: running; }
+@keyframes align-lower { from { transform: translate(-50%, -50%); } to { transform: translate(-50%, calc(-50% + var(--stack-offset))); } }
+@keyframes align-upper { from { transform: translate(-50%, -50%); } to { transform: translate(-50%, calc(-50% - 13px + var(--stack-offset))); } }
+@keyframes cut-upper { 0%, 15% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); } 40%, 55% { transform: translate(calc(-50% + 65px), calc(-50% - 8px + var(--stack-offset))); } 85%, 100% { transform: translate(-50%, calc(-50% + var(--stack-offset))); } }
+/* Cards move as solid objects, with softer paths and a restrained cut. */
+@keyframes shuffle-cards {
+  0% { left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(0); }
+  22% { left: calc(50% + var(--early-x)); top: calc(50% + var(--early-y)); transform: translate(-50%, -50%) rotate(var(--early-rotation)); }
+  45% { left: calc(50% + var(--scatter-x)); top: calc(50% + var(--scatter-y)); transform: translate(-50%, -50%) rotate(var(--rotation)); }
+  72% { left: calc(50% + var(--return-x)); top: calc(50% + var(--return-y)); transform: translate(-50%, -50%) rotate(var(--return-rotation)); }
+  100% { left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(0); }
+}
+@keyframes clean-interleave-lower {
+  0%, 100% { transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+  28%, 42% { transform: translate(calc(-50% - var(--shuffle-reach, 24px)), calc(-50% + var(--stack-offset) + 3px)) rotate(var(--shuffle-angle, -1deg)); }
+  72% { transform: translate(calc(-50% - 8px), calc(-50% + var(--stack-offset))) rotate(var(--shuffle-angle, -1deg)); }
+}
+@keyframes clean-interleave-upper {
+  0%, 100% { transform: translate(-50%, calc(-50% - 13px + var(--stack-offset))); }
+  28%, 42% { transform: translate(calc(-50% + var(--shuffle-reach, 25px)), calc(-50% - 13px + var(--stack-offset) - 4px)) rotate(var(--shuffle-angle, 0deg)); }
+  72% { transform: translate(calc(-50% + 8px), calc(-50% - 13px + var(--stack-offset))) rotate(var(--shuffle-angle, 0deg)); }
+}
+@keyframes cut-lower {
+  0%, 45% { transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+  75%, 100% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+}
+@keyframes cut-upper {
+  0%, 15% { transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+  40%, 55% { transform: translate(calc(-50% + 50px), calc(-50% - 20px + var(--stack-offset))) rotate(2deg); }
+  85%, 100% { transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+}
+@keyframes deal-from-actual-deck {
+  from { transform: translate(var(--deal-x, 0px), var(--deal-y, 0px)) rotate(var(--deal-tilt, 0deg)); }
+  to { transform: translate(0, 0) rotate(0); }
+}
+@keyframes war-burn-to-pile {
+  from { transform: translate(calc(-50% + var(--burn-x)), calc(-50% + var(--burn-y))) rotate(0); }
+  to { transform: translate(-50%, -50%) rotate(var(--burn-angle)); }
+}
+/* Small, stable variations in how each physical card lands and turns. */
+.playing-card { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)); }
+.playing-card.card-flipping { animation-duration: var(--turn-duration, .8s); }
+@keyframes deal-from-actual-deck {
+  from { transform: translate(calc(var(--deal-x, 0px) + var(--card-rest-x, 0px)), calc(var(--deal-y, 0px) + var(--card-rest-y, 0px))) rotate(var(--deal-tilt, 0deg)); }
+  to { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)); }
+}
+@keyframes card-turn-over {
+  0% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(0); }
+  50% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(90deg); }
+  100% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(0); }
+}
+@keyframes collect-to-deck {
+  from { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)); opacity: 1; }
+  to { transform: translate(calc(var(--collect-x) + var(--card-rest-x, 0px)), calc(var(--collect-y) + var(--card-rest-y, 0px))) rotate(0); opacity: 1; }
+}
+@keyframes tie-card-to-war-pile {
+  from { transform: translate(calc(-50% + var(--tie-slide-x)), calc(-50% + var(--tie-slide-y))) rotate(var(--card-rest-angle, 0deg)); }
+  to { transform: translate(-50%, -50%) rotate(var(--card-rest-angle, 0deg)); }
+}
+@keyframes collect-original-to-deck {
+  from { transform: translate(-50%, -50%) rotate(var(--card-rest-angle, 0deg)); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--collect-x)), calc(-50% + var(--collect-y))) rotate(0); opacity: 1; }
+}
+@keyframes collect-burn-to-deck {
+  from { transform: translate(-50%, -50%) rotate(var(--burn-angle)); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--collect-x)), calc(-50% + var(--collect-y))) rotate(0); opacity: 1; }
+}
+/* A quicker start, freer mixing and a true bottom-pile-over-top cut. */
+.dealer-deck.deck-to-center { animation-duration: .55s; }
+.shuffle-card { animation-timing-function: cubic-bezier(.3, 0, .25, 1); }
+.cut-lower, .cut-upper { animation-duration: 2.5s; animation-timing-function: cubic-bezier(.3, 0, .25, 1); }
+@keyframes cut-upper {
+  0%, 10% { z-index: var(--cut-layer); transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+  25%, 68% { z-index: var(--cut-layer); transform: translate(calc(-50% + 55px), calc(-50% + var(--stack-offset))); }
+  88%, 100% { z-index: var(--cut-layer); transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+}
+@keyframes cut-lower {
+  0%, 23% { z-index: var(--cut-layer); transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+  24% { z-index: var(--cut-over-layer); transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+  40% { z-index: var(--cut-over-layer); transform: translate(-50%, calc(-50% - 27px + var(--stack-offset))); }
+  56% { z-index: var(--cut-over-layer); transform: translate(calc(-50% + 55px), calc(-50% - 27px + var(--stack-offset))); }
+  68% { z-index: var(--cut-over-layer); transform: translate(calc(-50% + 55px), calc(-50% - 8px + var(--stack-offset))); }
+  88%, 100% { z-index: var(--cut-over-layer); transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+}
+
+/* Loose cards move independently across the felt before gathering. */
+.shuffle-card.shuffle-spread { animation: shuffle-spread-out .38s ease-out both; }
+@keyframes shuffle-spread-out {
+  from { left: calc(50% + var(--start-x)); top: calc(50% + var(--start-y)); transform: translate(-50%, -50%) rotate(var(--start-angle)); }
+  to { left: calc(50% + var(--scatter-x)); top: calc(50% + var(--scatter-y)); transform: translate(-50%, -50%) rotate(var(--rotation)); }
+}
+.shuffle-card.shuffle-mixing {
+  animation: shuffle-mix-x var(--mix-x-time) ease-in-out infinite alternate,
+    shuffle-mix-y var(--mix-y-time) ease-in-out infinite alternate,
+    shuffle-mix-turn var(--mix-turn-time) ease-in-out infinite alternate;
+}
+.clean-stage.is-playing .clean-shuffle-lower {
+  animation: clean-interleave-lower .48s ease-in-out var(--shuffle-stagger, 0s) 8 both;
+}
+.clean-stage.is-playing .clean-shuffle-upper {
+  animation: clean-interleave-upper .48s ease-in-out var(--shuffle-stagger, 0s) 8 both;
+}
+.clean-stage.is-playing .shuffle-exchange-top { animation: shuffle-exchange-top .45s ease-in-out both; }
+.clean-stage.is-playing .shuffle-exchange-bottom { animation: shuffle-exchange-bottom .45s ease-in-out both; }
+@keyframes shuffle-exchange-top {
+  0% { z-index: var(--exchange-front); transform: var(--exchange-start); }
+  45% { z-index: var(--exchange-front); transform: translate(calc(-50% + var(--exchange-x)), calc(-50% - 8px + var(--stack-offset) + var(--exchange-y))); }
+  46% { z-index: var(--exchange-under); transform: translate(calc(-50% + var(--exchange-x)), calc(-50% - 8px + var(--stack-offset) + var(--exchange-y))); }
+  100% { z-index: var(--exchange-under); transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+}
+@keyframes shuffle-exchange-bottom {
+  0% { z-index: var(--exchange-under); transform: var(--exchange-start); }
+  45% { z-index: var(--exchange-under); transform: translate(calc(-50% + var(--exchange-x)), calc(-50% + var(--stack-offset) + var(--exchange-y))); }
+  46% { z-index: var(--exchange-front); transform: translate(calc(-50% + var(--exchange-x)), calc(-50% + var(--stack-offset) + var(--exchange-y))); }
+  100% { z-index: var(--exchange-front); transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+}
+.clean-stage.is-playing .shuffle-peel { animation: shuffle-peel 4.2s ease-in-out both; }
+@keyframes shuffle-peel {
+  0%, 18% { z-index: 32; transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+  30%, 36% { z-index: 32; transform: translate(calc(-50% + 48px), calc(-50% - 10px + var(--stack-offset))) rotate(3deg); }
+  37% { z-index: 1; transform: translate(calc(-50% + 48px), calc(-50% - 10px + var(--stack-offset))) rotate(3deg); }
+  50%, 100% { z-index: 1; transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+}
+.table-results:not([hidden]) { animation: table-results-enter 1s ease-out both; }
+.table-results:not([hidden]) > div { animation: table-results-enter 1s .2s ease-out both; }
+.table-results:not([hidden]) > span { animation: table-results-enter 1s .4s ease-out both; }
+@keyframes table-results-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shuffle-mix-x {
+  from { left: calc(50% + var(--scatter-x)); }
+  to { left: calc(50% + var(--opposite-x)); }
+}
+@keyframes shuffle-mix-y {
+  from { top: calc(50% + var(--scatter-y)); }
+  to { top: calc(50% + var(--opposite-y)); }
+}
+@keyframes shuffle-mix-turn {
+  from { transform: translate(-50%, -50%) rotate(var(--rotation)); }
+  to { transform: translate(-50%, -50%) rotate(var(--reverse-rotation)); }
+}
+.cut-lower, .cut-upper { animation-duration: 3.4s; animation-timing-function: cubic-bezier(.3, 0, .25, 1); }
+@keyframes cut-upper {
+  0%, 8% { z-index: var(--cut-layer); transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+  24%, 76% { z-index: var(--cut-layer); transform: translate(calc(-50% + 77px), calc(-50% + var(--stack-offset))); }
+  92%, 100% { z-index: var(--cut-layer); transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+}
+@keyframes cut-lower {
+  0%, 8% { z-index: var(--cut-layer); transform: translate(-50%, calc(-50% + var(--stack-offset))); }
+  24%, 44% { z-index: var(--cut-layer); transform: translate(calc(-50% - 78px), calc(-50% + var(--stack-offset))); }
+  45% { z-index: var(--cut-over-layer); transform: translate(calc(-50% - 78px), calc(-50% + var(--stack-offset))); }
+  54% { z-index: var(--cut-over-layer); transform: translate(calc(-50% - 78px), calc(-50% - 27px + var(--stack-offset))); }
+  65% { z-index: var(--cut-over-layer); transform: translate(calc(-50% + 77px), calc(-50% - 27px + var(--stack-offset))); }
+  76% { z-index: var(--cut-over-layer); transform: translate(calc(-50% + 77px), calc(-50% - 8px + var(--stack-offset))); }
+  92%, 100% { z-index: var(--cut-over-layer); transform: translate(-50%, calc(-50% - 8px + var(--stack-offset))); }
+}
+/* Turn the card through the same direction as its face is revealed. */
+.house-side .deal-from-pile, .player-side .deal-from-pile { animation-timing-function: cubic-bezier(.16, .75, .28, 1); }
+.player-side .deal-from-pile { animation-timing-function: cubic-bezier(.22, .5, .4, 1); }
+.house-side .deal-from-pile, .player-side .deal-from-pile { animation-timing-function: var(--deal-easing, cubic-bezier(.22, .5, .4, 1)); }
+.playing-card.card-flipping { backface-visibility: visible; transform-origin: 20% 20%; animation-timing-function: ease-in-out; }
+@keyframes card-turn-over {
+  0% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(0deg) scaleX(1); }
+  49.99% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(90deg) scaleX(1); }
+  50% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(90deg) scaleX(-1); }
+  100% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)) perspective(700px) rotateY(180deg) scaleX(-1); }
+}
+.card-turn-stage {
+  position: relative; display: block; width: 150px; height: 150px; flex: 0 0 150px;
+  perspective: 1400px;
+  transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg));
+}
+.card-turn-inner {
+  display: block; width: 100%; height: 100%; position: relative;
+  transform-style: preserve-3d; transform-origin: 20% 20%;
+  animation: card-turn-3d var(--turn-duration, .9s) ease-in-out both;
+}
+.card-turn-back, .card-turn-face {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.card-turn-face { transform: rotateY(180deg); filter: brightness(.92); }
+@keyframes card-turn-3d { from { transform: rotateY(0deg); } to { transform: rotateY(180deg); } }
+/* Flip the faces around an edge, as though the card is turned over on the felt. */
+.card-turn-inner { animation-name: card-turn-duration; transform-origin: center; }
+.card-turn-back { transform-origin: 110% center; filter: grayscale(1) brightness(.38) contrast(1.2); animation: card-turn-back var(--turn-duration, .75s) ease-in-out both; }
+.card-turn-face { transform-origin: -10% center; animation: card-turn-face var(--turn-duration, .75s) ease-in-out both; }
+@keyframes card-turn-duration { from { transform: translateX(0); } to { transform: translateX(0); } }
+@keyframes card-turn-back { from { transform: translateX(0) rotateY(0deg); } to { transform: translateX(-120%) rotateY(180deg); } }
+@keyframes card-turn-face { from { transform: translateX(120%) rotateY(-180deg); } to { transform: translateX(0) rotateY(0deg); } }
+.card-turn-inner { animation-name: card-turn-settle; }
+@keyframes card-turn-settle { from { transform: rotate(0deg); } to { transform: rotate(var(--flip-angle-delta, 0deg)); } }
+.card-turn-stage { animation: card-flip-nudge var(--turn-duration, .75s) ease-in-out both; }
+@keyframes card-flip-nudge {
+  from { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)); }
+  to { transform: translate(calc(var(--card-rest-x, 0px) + var(--flip-nudge-x, 0px)), calc(var(--card-rest-y, 0px) + var(--flip-nudge-y, 0px))) rotate(var(--card-rest-angle, 0deg)); }
+}
+.shuffle-layer.pile-returning { animation-duration: 1.5s; animation-timing-function: ease-in-out; }
+@keyframes solid-pile-return { from { transform: translate(0, 0) scale(1); } to { transform: translate(var(--settle-x), var(--settle-y)) scale(var(--settle-scale, 1)); } }
+.dealer-deck.deck-ready img { animation: dealer-deck-ready .65s ease-in-out both; }
+@keyframes dealer-deck-ready { from { rotate: -2deg; } to { rotate: 0deg; } }
+.clean-stage.is-playing .shuffle-top { animation: shuffle-top-shift 4.2s ease-in-out both; }
+@keyframes shuffle-top-shift {
+  0%, 100% { transform: translate(-50%, calc(-50% - 6px + var(--stack-offset))); }
+  12%, 18% { transform: translate(calc(-50% + 12px), calc(-50% - 8px + var(--stack-offset))) rotate(1deg); }
+  33%, 48% { transform: translate(-50%, calc(-50% - 6px + var(--stack-offset))); }
+  63%, 69% { transform: translate(calc(-50% - 10px), calc(-50% - 8px + var(--stack-offset))) rotate(-1deg); }
+  82%, 92% { transform: translate(-50%, calc(-50% - 6px + var(--stack-offset))); }
+}
+.player-side .side-heading { transform: translateY(12px); }
+@keyframes deal-from-actual-deck {
+  0% { transform: translate(calc(var(--deal-x, 0px) + var(--card-rest-x, 0px)), calc(var(--deal-y, 0px) + var(--card-rest-y, 0px))) rotate(var(--deal-tilt, 0deg)); }
+  100% { transform: translate(var(--card-rest-x, 0px), var(--card-rest-y, 0px)) rotate(var(--card-rest-angle, 0deg)); }
+}
+.house-side .deal-from-pile, .player-side .deal-from-pile {
+  animation: deal-from-actual-deck var(--deal-duration, .75s) var(--deal-easing, ease-out) both,
+    deal-twist var(--deal-duration, .75s) ease-in-out both;
+}
+@keyframes deal-twist { 0%, 100% { rotate: 0deg; } 60% { rotate: var(--deal-twist, 0deg); } }
